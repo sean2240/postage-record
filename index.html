@@ -51,7 +51,7 @@
 </section>
 <section class="card no-print"><h2>郵資選項設定</h2><p class="muted">初始選項是依先前對話中提到的郵資建立；如公司實際郵資不同，可在此調整。格式：每行「類型,郵資」，例如「普掛,28」。</p><textarea id="rateset" rows="7" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit"></textarea><div class="row" style="margin-top:8px"><button class="btn secondary" id="saverates">儲存郵資選項</button><button class="btn danger" id="clearDay">清空目前日期紀錄</button></div></section>
 <script>
-const DEFAULT_RATES=[['普掛',28],['普掛',36],['普掛',44],['普掛',60],['雙掛號',43],['雙掛號',51],['雙掛號',59],['雙掛號',75],['雙掛號',107],['便利袋',65],['便利袋',80],['便利箱',73],['便利箱',80],['平信',8],['平信',16],['其他',15],['其他',80],['其他',100]];
+const DEFAULT_RATES=[['普掛',28],['普掛',36],['普掛',44],['普掛',60],['雙掛號',43],['雙掛號',51],['雙掛號',59],['雙掛號',75],['雙掛號',107],['便利袋',65],['便利袋',80],['便利箱',73],['便利箱',80],['平信',8],['平信',16],['其他',15],['其他',80],['其他',100],['其他',120]];
 const $=id=>document.getElementById(id);let rates=JSON.parse(localStorage.getItem('mailRates')||'null')||DEFAULT_RATES;let entries=JSON.parse(localStorage.getItem('mailEntries')||'[]');let splits=JSON.parse(localStorage.getItem('mailSplits')||'{}');
 const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};$('date').value=today();
 function save(){localStorage.setItem('mailEntries',JSON.stringify(entries));localStorage.setItem('mailSplits',JSON.stringify(splits));localStorage.setItem('mailRates',JSON.stringify(rates));}
