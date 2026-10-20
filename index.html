@@ -145,7 +145,36 @@ function renderReceipt(total){
 }
 window.delEntry=i=>{entries.splice(i,1);save();renderAll()};window.changeSplit=(i,v)=>{let a=splits[$('date').value]||[];a[i]=Number(v)||0;splits[$('date').value]=a;save();renderStats()};window.removeSplit=i=>{let a=splits[$('date').value]||[];a.splice(i,1);splits[$('date').value]=a;save();renderStats()};
 function renderAll(){ $('printDate').textContent='統計日期：'+$('date').value; renderDuplicateAlert();renderRecords();renderStats()}
-$('type').addEventListener('change',refreshRate);$('add').onclick=()=>{let t=$('type').value,r=$('rate').value,s=$('start').value.trim(),e=$('end').value.trim(),n=Number($('nonum').value)||0;if(s&&!e)e=s;if((!s&&e)){alert('請填寫郵件起號，或將起號與迄號都留空並填無號碼件數。');return}if(s&&(!/^\d+$/.test(s)||!/^[0-9]+$/.test(e)||Number(e)<Number(s))){alert('請確認郵件號碼是數字，且迄號不小於起號。');return}if(!s&&n<=0){alert('請填郵件號碼，或填入無號碼件數。');return}if(s&&n>0){alert('有郵件號碼時，無號碼件數請留 0。');return}
+function mailNumberPrefixCandidates(){
+  const prefixes=new Set();
+  dayEntries().forEach(x=>{[x.start,x.end].forEach(v=>{if(/^\d{6}$/.test(String(v||''))){let k=Math.floor(Number(v)/1000);prefixes.add(k);prefixes.add(k-1);prefixes.add(k+1);}})});
+  return [...prefixes].filter(x=>x>=0&&x<=999);
+}
+function rangeDistance(a,b,c,d){
+  if(a<=d&&c<=b)return 0;
+  return a>d?a-d:c-b;
+}
+function resolveMailRange(rawStart,rawEnd){
+  const shortStart=/^\d{3}$/.test(rawStart),shortEnd=/^\d{3}$/.test(rawEnd);
+  if(!shortStart&&!shortEnd)return {start:rawStart,end:rawEnd};
+  const existing=dayEntries().filter(x=>/^\d{6}$/.test(String(x.start||''))&&/^\d{6}$/.test(String(x.end||'')));
+  if(!existing.length)return {error:'目前日期沒有可判斷千號段的完整郵件號碼。請輸入完整六碼郵件號碼。'};
+  const prefixes=mailNumberPrefixCandidates();
+  const candidates=[];
+  prefixes.forEach(prefix=>{
+    let a=shortStart?prefix*1000+Number(rawStart):Number(rawStart);
+    let b=shortEnd?prefix*1000+Number(rawEnd):Number(rawEnd);
+    if(shortStart&&shortEnd&&Number(rawEnd)<Number(rawStart))b+=1000;
+    if(b<a)return;
+    const score=Math.min(...existing.map(x=>rangeDistance(a,b,Number(x.start),Number(x.end))));
+    candidates.push({start:String(a).padStart(6,'0'),end:String(b).padStart(6,'0'),score});
+  });
+  if(!candidates.length)return {error:'無法判斷郵件號碼所屬千號段，請輸入完整六碼郵件號碼。'};
+  candidates.sort((a,b)=>a.score-b.score);
+  if(candidates.length>1&&candidates[0].score===candidates[1].score)return {error:'有多個可能的千號段，請輸入完整六碼郵件號碼。'};
+  return {start:candidates[0].start,end:candidates[0].end};
+}
+$('type').addEventListener('change',refreshRate);$('add').onclick=()=>{let t=$('type').value,r=$('rate').value,s=$('start').value.trim(),e=$('end').value.trim(),n=Number($('nonum').value)||0;if(s&&!e)e=s;if((!s&&e)){alert('請填寫郵件起號，或將起號與迄號都留空並填無號碼件數。');return}if(s&&(!/^\d+$/.test(s)||!/^[0-9]+$/.test(e))){alert('請確認郵件號碼是數字。');return}if(s){const resolved=resolveMailRange(s,e);if(resolved.error){alert(resolved.error);return}s=resolved.start;e=resolved.end;if(Number(e)<Number(s)){alert('請確認郵件號碼迄號不小於起號。');return}}if(!s&&n<=0){alert('請填郵件號碼，或填入無號碼件數。');return}if(s&&n>0){alert('有郵件號碼時，無號碼件數請留 0。');return}
 let candidate={date:$('date').value,type:t,rate:Number(r),start:s,end:e,nonum:n};
 if(s){
   const conflicts=duplicateConflicts(candidate);
