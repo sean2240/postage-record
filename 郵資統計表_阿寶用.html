@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>每日寄信紀錄</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Microsoft JhengHei",sans-serif;color:#203044;background:#f4f7fb}*{box-sizing:border-box}body{margin:0;padding:20px;max-width:1100px;margin:auto}h1{font-size:27px;margin:0 0 6px}.sub{color:#66758a;margin:0 0 18px}.card{background:white;border:1px solid #dce4ee;border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 2px 8px #19385a08}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:6px;min-width:130px;flex:1}.field label{font-size:13px;color:#53657b}.field input,.field select{padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;background:#fff;min-width:0}.btn{border:0;border-radius:9px;padding:10px 15px;font:inherit;font-weight:650;cursor:pointer;background:#174b7a;color:#fff}.btn.secondary{background:#e8eef5;color:#203044}.btn.danger{background:#fff0f0;color:#a12b2b}.muted{color:#66758a;font-size:13px}.hidden{display:none!important}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e7edf4;vertical-align:top}th{background:#edf3f9;font-size:13px;color:#455b73}td small{color:#66758a}.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.metric{background:#f2f6fb;border-radius:10px;padding:13px}.metric .big{font-size:24px;font-weight:750}.tag{display:inline-block;background:#e8f2ff;color:#174b7a;border-radius:20px;padding:3px 9px;font-size:12px}.right{margin-left:auto}.splitrow{display:flex;gap:8px;align-items:center;margin:8px 0}.splitrow input{padding:9px;border:1px solid #cbd5e1;border-radius:8px;width:150px}.foot{font-size:12px;color:#718096;margin-top:10px}.receipt-summary{margin-top:14px;padding:14px 16px;background:#f1f4f7;border-left:4px solid #8a99a8;border-radius:8px;color:#344256}.receipt-summary>div{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:16px}.receipt-summary span{font-size:22px;font-weight:750}.receipt-summary small{display:block;margin-top:6px;color:#66758a;font-size:12px}@media print{body>h1{display:none!important}#stats th:nth-child(5),#stats td:nth-child(5){display:none!important}body{background:#fff;padding:0}.no-print{display:none!important}.card{box-shadow:none;border:0;padding:0;margin:0 0 16px}.printtitle{display:block!important}table{font-size:12px}th{background:#eee!important}}
+</style>
+</head>
+<body>
+<h1>阿寶每日寄信紀錄</h1>
+<section class="card no-print">
+ <div class="row"><div class="field" style="max-width:220px"><label>統計日期</label><input type="date" id="date"></div><button class="btn secondary" id="newday">切換／新增日期</button></div>
+</section>
+<section class="card no-print">
+<h2>新增寄信紀錄</h2>
+<div class="row">
+ <div class="field"><label>郵件類型</label><select id="type"></select></div>
+ <div class="field"><label>郵資（元／封）</label><select id="rate"></select></div>
+ <div class="field"><label>郵件起號（沒有號碼留空）</label><input id="start" inputmode="numeric" placeholder="例如 020111"></div>
+ <div class="field"><label>郵件迄號</label><input id="end" inputmode="numeric" placeholder="例如 020114"></div>
+ <div class="field" style="max-width:150px"><label>無號碼件數</label><input id="nonum" type="number" min="0" step="1" value="0"></div>
+ <button class="btn" id="add">新增紀錄</button>
+</div>
+<p class="muted">連號信件填起號與迄號；單封信只填起號即可，迄號留空會自動視為同一號。沒有郵件號碼的信件，起迄留空並填無號碼件數。</p>
+</section>
+<section class="card no-print"><h2>今日輸入紀錄</h2><div id="duplicateAlert"></div><div id="records"></div></section>
+<section class="card">
+<h2 class="printtitle">每日統計</h2><p class="printtitle" id="printDate"></p>
+<div class="summary" id="metrics"></div>
+<div id="stats"></div>
+<div id="receiptReport"></div>
+
+</section>
+<section class="card no-print">
+<h2>收據拆分</h2><p class="muted">請款收據只拆金額，不改動郵件件數或郵件號碼。其餘金額會自動作為一般收據。</p>
+<div><strong>請款收據金額</strong><div id="splits"></div><button class="btn secondary" id="addsplit">＋ 新增請款收據</button></div>
+
+
+<div class="summary" style="margin-top:14px"><div class="metric"><div class="muted">郵資總額</div><div class="big" id="receiptTotal">NT$0</div></div><div class="metric"><div class="muted">請款收據合計</div><div class="big" id="specialTotal">NT$0</div></div><div class="metric"><div class="muted">一般收據</div><div class="big" id="regularTotal">NT$0</div></div><div class="metric"><div class="muted">拆分差額（應為 0）</div><div class="big" id="delta">NT$0</div></div></div>
+<div class="row no-print" style="margin-top:14px"><button class="btn" id="print">列印統計</button><button class="btn secondary" id="csv">匯出今日 CSV</button></div>
+</section>
+<section class="card memo-card" id="memoCard">
+  <div class="row memo-heading"><h2 style="margin:0">備忘錄</h2><label class="memo-print-toggle"><input type="checkbox" id="memoPrint"> 列印</label></div>
+  <div class="memo-toolbar no-print" role="toolbar" aria-label="備忘錄文字格式">
+    <select id="memoFont" aria-label="字體"><option value="Microsoft JhengHei">微軟正黑體</option><option value="PMingLiU">新細明體</option><option value="DFKai-SB">標楷體</option><option value="Arial">Arial</option></select>
+    <select id="memoSize" aria-label="文字大小"><option value="2">小</option><option value="3" selected>一般</option><option value="4">大</option><option value="5">特大</option></select>
+    <button type="button" class="btn secondary" id="memoBold"><strong>粗體</strong></button>
+  </div>
+  <div id="memoText" class="memo-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="備忘錄內容"></div>
+</section>
+<section class="card no-print"><h2>郵資選項設定</h2><p class="muted">初始選項是依先前對話中提到的郵資建立；如公司實際郵資不同，可在此調整。格式：每行「類型,郵資」，例如「普掛,28」。</p><textarea id="rateset" rows="7" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit"></textarea><div class="row" style="margin-top:8px"><button class="btn secondary" id="saverates">儲存郵資選項</button><button class="btn danger" id="clearDay">清空目前日期紀錄</button></div></section>
+<script>
+const DEFAULT_RATES=[['普掛',28],['普掛',36],['普掛',44],['普掛',60],['雙掛號',43],['雙掛號',51],['雙掛號',59],['雙掛號',75],['雙掛號',107],['便利袋',65],['便利袋',80],['便利箱',73],['便利箱',80],['平信',8],['平信',16],['其他',15],['其他',80],['其他',100]];
+const $=id=>document.getElementById(id);let rates=JSON.parse(localStorage.getItem('mailRates')||'null')||DEFAULT_RATES;let entries=JSON.parse(localStorage.getItem('mailEntries')||'[]');let splits=JSON.parse(localStorage.getItem('mailSplits')||'{}');
+const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};$('date').value=today();
+function save(){localStorage.setItem('mailEntries',JSON.stringify(entries));localStorage.setItem('mailSplits',JSON.stringify(splits));localStorage.setItem('mailRates',JSON.stringify(rates));}
+function dayEntries(){return entries.filter(x=>x.date===$('date').value)}
+function types(){return [...new Set(rates.map(x=>x[0]))]}
+function refreshType(){let old=$('type').value;$('type').innerHTML=types().map(t=>`<option>${esc(t)}</option>`).join('');if(types().includes(old))$('type').value=old;refreshRate()}
+function refreshRate(){let t=$('type').value,old=$('rate').value;let vals=rates.filter(x=>x[0]===t).map(x=>x[1]);$('rate').innerHTML=vals.map(v=>`<option value="${v}">${v}</option>`).join('');if(vals.map(String).includes(old))$('rate').value=old;}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function count(e){if(e.start!==''&&e.end!==''){let a=Number(e.start),b=Number(e.end);return Number.isFinite(a)&&Number.isFinite(b)&&b>=a?b-a+1:0;}return Number(e.nonum)||0}
+function amount(e){return count(e)*Number(e.rate||0)}
+function normalizeNo(v){return String(v??'').trim()}
+function overlaps(a1,a2,b1,b2){
+  // Postal numbers are fixed-width strings; numeric comparison finds interval overlap.
+  return Number(a1)<=Number(b2) && Number(b1)<=Number(a2);
+}
+function duplicateConflicts(candidate, ignoreIndex=-1){
+  const conflicts=[];
+  if(!candidate.start || !candidate.end) return conflicts;
+  const cStart=normalizeNo(candidate.start), cEnd=normalizeNo(candidate.end);
+  dayEntries().forEach((e)=>{
+    const idx=entries.indexOf(e);
+    if(idx===ignoreIndex || !e.start || !e.end) return;
+    const eStart=normalizeNo(e.start), eEnd=normalizeNo(e.end);
+    if(overlaps(cStart,cEnd,eStart,eEnd)){
+      const lo=String(Math.max(Number(cStart),Number(eStart))).padStart(Math.max(cStart.length,eStart.length),'0');
+      const hi=String(Math.min(Number(cEnd),Number(eEnd))).padStart(Math.max(cEnd.length,eStart.length),'0');
+      conflicts.push({entry:e,lo,hi});
+    }
+  });
+  return conflicts;
+}
+function allDuplicateConflicts(){
+  const es=dayEntries(), conflicts=[];
+  for(let i=0;i<es.length;i++){
+    const e=es[i];
+    if(!e.start||!e.end) continue;
+    const later=es.slice(i+1);
+    later.forEach(other=>{
+      if(!other.start||!other.end) return;
+      if(overlaps(e.start,e.end,other.start,other.end)){
+        const lo=String(Math.max(Number(e.start),Number(other.start))).padStart(Math.max(e.start.length,other.start.length),'0');
+        const hi=String(Math.min(Number(e.end),Number(other.end))).padStart(Math.max(e.end.length,other.end.length),'0');
+        conflicts.push({a:e,b:other,lo,hi});
+      }
+    });
+  }
+  return conflicts;
+}
+function renderDuplicateAlert(){
+  const conflicts=allDuplicateConflicts();
+  const box=$('duplicateAlert');
+  if(!conflicts.length){
+    box.innerHTML='<p class="muted" style="color:#18794e">✓ 目前日期未發現重複郵件號碼。</p>';
+    return;
+  }
+  box.innerHTML=`<div style="border:1px solid #e7a1a1;background:#fff1f1;color:#8b1e1e;border-radius:10px;padding:12px;margin:10px 0">
+    <strong>⚠ 發現 ${conflicts.length} 組郵件號碼重複，請先修正再產生統計：</strong>
+    <ul style="margin:8px 0 0;padding-left:22px">${conflicts.map(c=>{
+      const range=c.lo===c.hi?c.lo:`${c.lo}～${c.hi}`;
+      return `<li>${esc(c.a.type)} ${c.a.rate} 元（${c.a.start}～${c.a.end}）與 ${esc(c.b.type)} ${c.b.rate} 元（${c.b.start}～${c.b.end}）重複：<strong>${range}</strong></li>`;
+    }).join('')}</ul></div>`;
+}
+
+function fmt(n){return 'NT$'+Number(n||0).toLocaleString('zh-TW',{maximumFractionDigits:0})}
+function groupStats(){let map=new Map();for(let e of dayEntries()){let k=e.type+'|'+e.rate;if(!map.has(k))map.set(k,{type:e.type,rate:Number(e.rate),qty:0,nonum:0,amt:0,ranges:[]});let g=map.get(k);g.qty+=count(e);g.nonum+=Number(e.nonum)||0;g.amt+=amount(e);if(e.start!==''&&e.end!=='')g.ranges.push([e.start,e.end]);}return [...map.values()].filter(g=>g.qty>0).sort((a,b)=>a.type.localeCompare(b.type,'zh-Hant')||a.rate-b.rate)}
+function mergeRanges(ranges){ranges.sort((a,b)=>Number(a[0])-Number(b[0]));let out=[];for(let [s,e] of ranges){let last=out[out.length-1];let width=Math.max(s.length,e.length);if(last&&Number(s)<=Number(last[1])+1&&s.length===last[0].length&&e.length===last[1].length){if(Number(e)>Number(last[1]))last[1]=e;}else out.push([s,e]);}return out.map(([s,e])=>s===e?s:`${s}～${e}`).join('\n')}
+function renderRecords(){let es=dayEntries();if(!es.length){$('records').innerHTML='<p class="muted">目前日期尚無紀錄。</p>';return}let html='<table><thead><tr><th>類型</th><th>郵資</th><th>郵件號碼</th><th>無號碼件數</th><th>件數</th><th>金額</th><th></th></tr></thead><tbody>';es.forEach(e=>{let idx=entries.indexOf(e);html+=`<tr><td>${esc(e.type)}</td><td>${e.rate}</td><td>${e.start?(e.end&&e.end!==e.start?esc(e.start)+'～'+esc(e.end):esc(e.start)):'—'}</td><td>${e.nonum||0}</td><td>${count(e)}</td><td>${fmt(amount(e))}</td><td><button class="btn danger" onclick="delEntry(${idx})">刪除</button></td></tr>`});$('records').innerHTML=html+'</tbody></table>'}
+function renderStats(){if(allDuplicateConflicts().length){$('metrics').innerHTML='';$('stats').innerHTML='<p style="color:#8b1e1e;font-weight:700">郵件號碼有重複，統計暫停顯示。請先修正「今日輸入紀錄」中的重複號碼。</p>';renderReceipt(0);return}let gs=groupStats(),es=dayEntries(),qty=gs.reduce((a,g)=>a+g.qty,0),amt=gs.reduce((a,g)=>a+g.amt,0);$('metrics').innerHTML=`<div class="metric"><div class="muted">郵件總件數</div><div class="big">${qty}</div></div><div class="metric"><div class="muted">郵資總額</div><div class="big">${fmt(amt)}</div></div>`;if(!gs.length){$('stats').innerHTML='<p class="muted">目前日期沒有寄信紀錄，統計表保持空白。</p>';renderReceipt(amt);return}let h='<table><thead><tr><th>郵件類型</th><th>郵資</th><th>件數</th><th>郵件號碼</th><th>無號碼件數</th><th>金額</th></tr></thead><tbody>';gs.forEach(g=>{let ranges=mergeRanges(g.ranges);h+=`<tr><td>${esc(g.type)}</td><td>${g.rate}</td><td>${g.qty}</td><td style="white-space:pre-line">${ranges||'—'}</td><td>${g.nonum||0}</td><td>${fmt(g.amt)}</td></tr>`});$('stats').innerHTML=h+'</tbody></table>';renderReceipt(amt)}
+function renderReceipt(total){
+  let arr=splits[$('date').value]||[];
+  let special=arr.reduce((a,x)=>a+Number(x||0),0),regular=total-special;
+  $('receiptTotal').textContent=fmt(total);
+  $('specialTotal').textContent=fmt(special);
+  $('regularTotal').textContent=fmt(regular);
+  $('delta').textContent=fmt(total-(special+regular));
+  $('splits').innerHTML=arr.map((v,i)=>`<div class="splitrow"><label>請款收據 ${i+1}</label><input type="number" min="0" value="${v}" onchange="changeSplit(${i},this.value)" placeholder="金額"><button class="btn danger" onclick="removeSplit(${i})">移除</button></div>`).join('')||'<p class="muted">沒有請款收據時，全部金額會列為一般收據。</p>';
+  if(regular<0)$('regularTotal').style.color='#b42318';else $('regularTotal').style.color='';
+  // Print-friendly receipt issuance list, integrated into the daily statistics.
+  let receiptRows='';
+  arr.forEach((v,i)=>{
+    const n=Number(v||0);
+    if(n>0) receiptRows+=`<tr><td>請款收據 ${i+1}</td><td>${fmt(n)}</td></tr>`;
+  });
+  if(regular>0) receiptRows+=`<tr><td>一般收據</td><td>${fmt(regular)}</td></tr>`;
+  if(total>0){
+    $('receiptReport').innerHTML=`<h3>本日收據開立明細</h3><table><thead><tr><th>收據項目</th><th>收據金額</th></tr></thead><tbody>${receiptRows||'<tr><td>一般收據</td><td>'+fmt(total)+'</td></tr>'}</tbody></table><div class=\"receipt-summary\"><div><strong>收據金額合計</strong><span>${fmt(total)}</span></div></div>`;
+  }else{
+    $('receiptReport').innerHTML='';
+  }
+}
+window.delEntry=i=>{entries.splice(i,1);save();renderAll()};window.changeSplit=(i,v)=>{let a=splits[$('date').value]||[];a[i]=Number(v)||0;splits[$('date').value]=a;save();renderStats()};window.removeSplit=i=>{let a=splits[$('date').value]||[];a.splice(i,1);splits[$('date').value]=a;save();renderStats()};
+function renderAll(){ $('printDate').textContent='統計日期：'+$('date').value; renderDuplicateAlert();renderRecords();renderStats()}
+$('type').addEventListener('change',refreshRate);$('add').onclick=()=>{let t=$('type').value,r=$('rate').value,s=$('start').value.trim(),e=$('end').value.trim(),n=Number($('nonum').value)||0;if(s&&!e)e=s;if((!s&&e)){alert('請填寫郵件起號，或將起號與迄號都留空並填無號碼件數。');return}if(s&&(!/^\d+$/.test(s)||!/^[0-9]+$/.test(e)||Number(e)<Number(s))){alert('請確認郵件號碼是數字，且迄號不小於起號。');return}if(!s&&n<=0){alert('請填郵件號碼，或填入無號碼件數。');return}if(s&&n>0){alert('有郵件號碼時，無號碼件數請留 0。');return}
+let candidate={date:$('date').value,type:t,rate:Number(r),start:s,end:e,nonum:n};
+if(s){
+  const conflicts=duplicateConflicts(candidate);
+  if(conflicts.length){
+    const detail=conflicts.map(c=>{
+      const range=c.lo===c.hi?c.lo:`${c.lo}～${c.hi}`;
+      return `${c.entry.type} ${c.entry.rate} 元（${c.entry.start}～${c.entry.end}）已使用 ${range}`;
+    }).join('\n');
+    alert('這段郵件號碼與目前日期的紀錄重複，已取消新增：\n'+detail);
+    return;
+  }
+}
+entries.push(candidate);save();$('start').value='';$('end').value='';$('nonum').value=0;renderAll()};
+$('date').onchange=renderAll;$('newday').onclick=()=>{let d=prompt('輸入要查看／新增的日期（YYYY-MM-DD）',today());if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d)){$('date').value=d;renderAll()}};
+$('addsplit').onclick=()=>{let a=splits[$('date').value]||[];a.push('');splits[$('date').value]=a;save();renderStats()};
+$('saverates').onclick=()=>{let lines=$('rateset').value.split(/\n/).map(x=>x.trim()).filter(Boolean),next=[];for(let line of lines){let p=line.split(',');if(p.length<2||!p[0].trim()||!Number.isFinite(Number(p[1]))){alert('格式錯誤：每行請輸入「類型,郵資」，例如 普掛,28');return}next.push([p[0].trim(),Number(p[1])])}if(!next.length){alert('至少需要一個郵資選項');return}rates=next;save();refreshType();renderAll();alert('郵資選項已儲存。')};
+$('clearDay').onclick=()=>{if(!confirm('確定清空 '+$('date').value+' 的所有寄信紀錄與收據拆分？'))return;entries=entries.filter(e=>e.date!==$('date').value);delete splits[$('date').value];save();renderAll()};
+$('print').onclick=()=>window.print();$('csv').onclick=()=>{let c=allDuplicateConflicts();if(c.length){alert('匯出已停止：目前日期有 '+c.length+' 組郵件號碼重複，請先修正。');return}let gs=groupStats(),rows=[['郵件類型','郵資','件數','郵件號碼','無號碼件數','金額']];gs.forEach(g=>rows.push([g.type,g.rate,g.qty,mergeRanges(g.ranges),g.nonum,g.amt]));let csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');let blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='每日寄信統計_'+$('date').value+'.csv';a.click();URL.revokeObjectURL(url)};
+$('rateset').value=rates.map(x=>x.join(',')).join('\n');refreshType();renderAll();
+</script>
+
+
+<style>
+.memo-heading{align-items:center;justify-content:space-between;margin-bottom:10px}
+.memo-print-toggle{display:flex;align-items:center;gap:6px;font-weight:600}
+.memo-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.memo-toolbar select{padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font:inherit}
+.memo-text{min-height:130px;border:1px solid #cbd5e1;border-radius:8px;padding:12px;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
+@media print{
+  #memoCard:not(.memo-print-enabled){display:none!important}
+  #memoCard.memo-print-enabled{display:block!important;border:0;box-shadow:none;padding:0;margin-top:16px}
+  #memoCard .memo-print-toggle{display:none!important}
+  #memoCard .memo-text{min-height:0;border:0;padding:0}
+}
+</style>
+<script>
+(()=>{
+  const box=document.getElementById('memoPrint'),card=document.getElementById('memoCard'),editor=document.getElementById('memoText');
+  editor.innerHTML=localStorage.getItem('mailMemoHtml')||'';
+  function syncPrint(){card.classList.toggle('memo-print-enabled',box.checked)}
+  box.addEventListener('change',syncPrint);
+  editor.addEventListener('input',()=>localStorage.setItem('mailMemoHtml',editor.innerHTML));
+  document.getElementById('memoBold').addEventListener('click',()=>{editor.focus();document.execCommand('bold');localStorage.setItem('mailMemoHtml',editor.innerHTML)});
+  document.getElementById('memoFont').addEventListener('change',e=>{editor.focus();document.execCommand('fontName',false,e.target.value);localStorage.setItem('mailMemoHtml',editor.innerHTML)});
+  document.getElementById('memoSize').addEventListener('change',e=>{editor.focus();document.execCommand('fontSize',false,e.target.value);localStorage.setItem('mailMemoHtml',editor.innerHTML)});
+  syncPrint();
+})();
+</script>
+
+</body></html>
