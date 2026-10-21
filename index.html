@@ -54,7 +54,6 @@
  <div class="row" style="align-items:center;margin:12px 0">
    <button class="btn secondary" id="backupModeBtn" aria-pressed="false">備份</button>
    <button class="btn secondary" id="restoreModeBtn" aria-pressed="false">還原</button>
-   <button class="btn secondary hidden" id="chooseBackup" style="font-size:12px;padding:6px 10px">選擇備份檔</button>
    <span id="backupFileName" class="muted hidden" style="font-size:12px">尚未選擇備份檔</span>
    <button class="btn danger right" id="clearLocal">清除本機紀錄</button>
    <input type="file" id="backupFile" accept=".json,application/json" hidden>
@@ -353,7 +352,6 @@ $('reportMonth').value=today().slice(0,7);
   calendarMode=mode;
   $b('backupActions').classList.toggle('hidden',mode!=='backup');
   $b('restoreActions').classList.add('hidden');
-  $b('chooseBackup').classList.toggle('hidden',mode!=='restore');
   $b('backupFileName').classList.toggle('hidden',mode!=='restore');
   $b('backupModeBtn').classList.toggle('active',mode==='backup');
   $b('restoreModeBtn').classList.toggle('active',mode==='restore');
@@ -377,7 +375,7 @@ $('reportMonth').value=today().slice(0,7);
   }
  }
  $b('backupModeBtn').onclick=()=>setBackupMode('backup');
- $b('restoreModeBtn').onclick=()=>setBackupMode('restore');
+ $b('restoreModeBtn').onclick=()=>{setBackupMode('restore');$b('backupFile').click();};
  $b('backupPrevMonth').onclick=()=>{if(!calendarMonth)return;const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=monthKey(new Date(y,m-2,1));renderCalendar()};
  $b('backupNextMonth').onclick=()=>{if(!calendarMonth)return;const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=monthKey(new Date(y,m,1));renderCalendar()};
  $b('downloadBackup').onclick=()=>download(snapshot(),'郵資統計備份_'+new Date().toISOString().slice(0,10)+'.json');
@@ -387,7 +385,7 @@ $('reportMonth').value=today().slice(0,7);
   const memos={};Object.entries(all.mailMemos||{}).forEach(([d,v])=>{if(d>=a&&d<=z)memos[d]=v});
   download({...all,mailEntries:entries,mailSplits:splits,mailMemos:memos,backupRange:{start:a,end:z}},`郵資統計備份_${a}_${z}.json`);
  };
- $b('chooseBackup').onclick=()=>$b('backupFile').click();
+
 
 
  $b('backupFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{
