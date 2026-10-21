@@ -287,10 +287,33 @@ $('reportMonth').value=today().slice(0,7);
 .memo-toolbar select{padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font:inherit}
 .memo-text{min-height:130px;border:1px solid #cbd5e1;border-radius:8px;padding:12px;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
 @media print{
+  /* 列印時不要讓備忘錄編輯器的網頁尺寸／格式撐出多餘頁面 */
+  html,body{height:auto!important;min-height:0!important;overflow:visible!important}
+  body{max-width:none!important;padding:0!important;margin:0!important}
   #memoCard:not(.memo-print-enabled){display:none!important}
-  #memoCard.memo-print-enabled{display:block!important;border:0;box-shadow:none;padding:0;margin-top:16px}
-  #memoCard .memo-print-toggle{display:none!important}
-  #memoCard .memo-text{min-height:0;border:0;padding:0}
+  #memoCard.memo-print-enabled{
+    display:block!important;position:static!important;float:none!important;
+    width:100%!important;max-width:100%!important;height:auto!important;min-height:0!important;
+    border:0!important;box-shadow:none!important;padding:0!important;margin:0!important;
+    break-inside:auto!important;page-break-inside:auto!important;overflow:visible!important
+  }
+  #memoCard .memo-print-toggle,#memoCard .memo-toolbar{display:none!important}
+  #memoCard .memo-text{
+    display:block!important;box-sizing:border-box!important;
+    width:100%!important;max-width:100%!important;height:auto!important;min-height:0!important;
+    margin:0!important;padding:0!important;border:0!important;
+    overflow:visible!important;white-space:normal!important;overflow-wrap:anywhere!important;
+    font-size:12pt!important;line-height:1.5!important;
+    break-inside:auto!important;page-break-inside:auto!important
+  }
+  #memoCard .memo-text *{
+    max-width:100%!important;box-sizing:border-box!important;
+    white-space:normal!important;overflow-wrap:anywhere!important;
+    line-height:1.5!important
+  }
+  #memoCard .memo-text font[size],#memoCard .memo-text span[style*="font-size"]{
+    font-size:12pt!important
+  }
 }
 </style>
 <script>
