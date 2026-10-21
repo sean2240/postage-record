@@ -5,12 +5,12 @@
 <title>每日寄信紀錄</title>
 <style>
 :root{font-family:system-ui,-apple-system,"Microsoft JhengHei",sans-serif;color:#203044;background:#f4f7fb}*{box-sizing:border-box}body{margin:0;padding:20px;max-width:1100px;margin:auto}h1{font-size:27px;margin:0 0 6px}.sub{color:#66758a;margin:0 0 18px}.card{background:white;border:1px solid #dce4ee;border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 2px 8px #19385a08}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:6px;min-width:130px;flex:1}.field label{font-size:13px;color:#53657b}.field input,.field select{padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;background:#fff;min-width:0}.btn{border:0;border-radius:9px;padding:10px 15px;font:inherit;font-weight:650;cursor:pointer;background:#174b7a;color:#fff}.btn.secondary{background:#e8eef5;color:#203044}.btn.danger{background:#fff0f0;color:#a12b2b}.muted{color:#66758a;font-size:13px}.hidden{display:none!important}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e7edf4;vertical-align:top}th{background:#edf3f9;font-size:13px;color:#455b73}td small{color:#66758a}.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.metric{background:#f2f6fb;border-radius:10px;padding:13px}.metric .big{font-size:24px;font-weight:750}.tag{display:inline-block;background:#e8f2ff;color:#174b7a;border-radius:20px;padding:3px 9px;font-size:12px}.right{margin-left:auto}.splitrow{display:flex;gap:8px;align-items:center;margin:8px 0}.splitrow input{padding:9px;border:1px solid #cbd5e1;border-radius:8px;width:150px}.foot{font-size:12px;color:#718096;margin-top:10px}.receipt-summary{margin-top:14px;padding:14px 16px;background:#f1f4f7;border-left:4px solid #8a99a8;border-radius:8px;color:#344256}.receipt-summary>div{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:16px}.receipt-summary span{font-size:22px;font-weight:750}.receipt-summary small{display:block;margin-top:6px;color:#66758a;font-size:12px}@media print{body>h1{display:none!important}#stats th:nth-child(5),#stats td:nth-child(5){display:none!important}body{background:#fff;padding:0}.no-print{display:none!important}.card{box-shadow:none;border:0;padding:0;margin:0 0 16px}.printtitle{display:block!important}table{font-size:12px}th{background:#eee!important}}
-</style>
+.history-controls{margin:10px 0 16px}.month-report-title{margin:18px 0 8px;font-size:18px}.month-report-empty{padding:14px;border:1px dashed #cbd5e1;border-radius:10px;color:#66758a;background:#f8fafc}.month-report-table-wrap{overflow-x:auto}.month-report-table-wrap table{min-width:560px}.month-report-total{font-weight:750;background:#edf3f9}.month-report-daily{margin-top:16px}@media print{#historyCard{break-before:page;box-shadow:none;border:0;padding:0}#historyCard .history-controls,#historyCard .no-print{display:none!important}.month-report-table-wrap{overflow:visible}.month-report-table-wrap table{min-width:0}}</style>
 </head>
 <body>
 <h1>阿寶每日寄信紀錄</h1>
 <section class="card no-print">
- <div class="row"><div class="field" style="max-width:220px"><label>統計日期</label><input type="date" id="date"></div><button class="btn secondary" id="newday">切換／新增日期</button></div>
+ <div class="row"><div class="field" style="max-width:220px"><label>統計日期</label><input type="date" id="date"></div><button class="btn secondary" id="newday">切換／新增日期</button><button class="btn secondary" id="openMonthPage">月報查詢</button><button class="btn secondary right hidden" id="backMonth">返回月報</button></div>
 </section>
 <section class="card no-print">
 <h2>新增寄信紀錄</h2>
@@ -41,7 +41,13 @@
 <div class="summary" style="margin-top:14px"><div class="metric"><div class="muted">郵資總額</div><div class="big" id="receiptTotal">NT$0</div></div><div class="metric"><div class="muted">請款收據合計</div><div class="big" id="specialTotal">NT$0</div></div><div class="metric"><div class="muted">一般收據</div><div class="big" id="regularTotal">NT$0</div></div><div class="metric"><div class="muted">拆分差額（應為 0）</div><div class="big" id="delta">NT$0</div></div></div>
 <div class="row no-print" style="margin-top:14px"><button class="btn" id="print">列印統計</button><button class="btn secondary" id="csv">匯出今日 CSV</button></div>
 </section>
-<section class="card memo-card" id="memoCard">
+<section class="card hidden" id="historyCard">
+<div class="row" style="align-items:center;justify-content:space-between"><h2 style="margin:0">月報查詢</h2><button class="btn secondary no-print" id="backMain">← 返回每日紀錄</button></div>
+<div class="history-controls no-print"><div class="row">
+<div class="field" style="max-width:220px"><label for="reportMonth">月報月份</label><input type="month" id="reportMonth"></div>
+<button class="btn" id="monthSearch">查詢月報</button></div>
+<p class="muted">彙整所選月份的郵件件數與郵資；可查看各日紀錄或匯出月報。</p></div>
+<div id="monthReport"></div><div class="row no-print" style="margin-top:12px"><button class="btn secondary" id="printMonth">列印月報</button><button class="btn secondary" id="exportMonth">匯出月報 CSV</button></div></section><section class="card memo-card" id="memoCard">
   <div class="row memo-heading"><h2 style="margin:0">備忘錄</h2><label class="memo-print-toggle"><input type="checkbox" id="memoPrint"> 列印</label></div>
   <div class="memo-toolbar no-print" role="toolbar" aria-label="備忘錄文字格式">
     <select id="memoFont" aria-label="字體"><option value="DFKai-SB">標楷體</option><option value="PMingLiU">新細明體</option><option value="Microsoft JhengHei">微軟正黑體</option><option value="Arial">Arial</option></select>
@@ -193,7 +199,50 @@ $('addsplit').onclick=()=>{let a=splits[$('date').value]||[];a.push('');splits[$
 $('saverates').onclick=()=>{let lines=$('rateset').value.split(/\n/).map(x=>x.trim()).filter(Boolean),next=[];for(let line of lines){let p=line.split(',');if(p.length<2||!p[0].trim()||!Number.isFinite(Number(p[1]))){alert('格式錯誤：每行請輸入「類型,郵資」，例如 普掛,28');return}next.push([p[0].trim(),Number(p[1])])}if(!next.length){alert('至少需要一個郵資選項');return}rates=next;save();refreshType();renderAll();alert('郵資選項已儲存。')};
 $('clearDay').onclick=()=>{if(!confirm('確定清空 '+$('date').value+' 的所有寄信紀錄與收據拆分？'))return;entries=entries.filter(e=>e.date!==$('date').value);delete splits[$('date').value];save();renderAll()};
 $('print').onclick=()=>window.print();$('csv').onclick=()=>{let c=allDuplicateConflicts();if(c.length){alert('匯出已停止：目前日期有 '+c.length+' 組郵件號碼重複，請先修正。');return}let gs=groupStats(),rows=[['郵件類型','郵資','件數','郵件號碼','無號碼件數','金額']];gs.forEach(g=>rows.push([g.type,g.rate,g.qty,mergeRanges(g.ranges),g.nonum,g.amt]));let csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');let blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='每日寄信統計_'+$('date').value+'.csv';a.click();URL.revokeObjectURL(url)};
+
+function monthEntries(month){return entries.filter(e=>String(e.date||'').slice(0,7)===month)}
+function renderMonthReport(){
+ const month=$('reportMonth').value,box=$('monthReport');
+ if(!month){box.innerHTML='<div class="month-report-empty">請選擇月份後產生月報。</div>';return}
+ const es=monthEntries(month);
+ if(!es.length){box.innerHTML=`<h3 class="month-report-title">${esc(month)} 月報</h3><div class="month-report-empty">這個月份沒有寄信紀錄。</div>`;return}
+ const groups=new Map(),days=new Map();let qty=0,total=0;
+ es.forEach(e=>{const q=count(e),a=amount(e),k=e.type+'|'+Number(e.rate||0);qty+=q;total+=a;
+ if(!groups.has(k))groups.set(k,{type:e.type,rate:Number(e.rate||0),qty:0,amount:0});let g=groups.get(k);g.qty+=q;g.amount+=a;
+ if(!days.has(e.date))days.set(e.date,{date:e.date,qty:0,amount:0});let d=days.get(e.date);d.qty+=q;d.amount+=a;});
+ const gs=[...groups.values()].sort((a,b)=>a.type.localeCompare(b.type,'zh-Hant')||a.rate-b.rate),ds=[...days.values()].sort((a,b)=>a.date.localeCompare(b.date));
+ box.innerHTML=`<h3 class="month-report-title">${esc(month)} 月報</h3><div class="summary">
+ <div class="metric"><div class="muted">本月郵件總件數</div><div class="big">${qty.toLocaleString('zh-TW')} 件</div></div>
+ <div class="metric"><div class="muted">本月郵資總額</div><div class="big">${fmt(total)}</div></div>
+ <div class="metric"><div class="muted">有紀錄天數</div><div class="big">${ds.length} 天</div></div></div>
+ <h3 class="month-report-title">依郵件類型與郵資彙總</h3><div class="month-report-table-wrap"><table><thead><tr><th>郵件類型</th><th>郵資</th><th>件數</th><th>金額</th></tr></thead><tbody>
+ ${gs.map(g=>`<tr><td>${esc(g.type)}</td><td>${g.rate}</td><td>${g.qty}</td><td>${fmt(g.amount)}</td></tr>`).join('')}
+ <tr class="month-report-total"><td colspan="2">本月合計</td><td>${qty}</td><td>${fmt(total)}</td></tr></tbody></table></div>
+ <h3 class="month-report-title month-report-daily">每日郵資紀錄</h3><div class="month-report-table-wrap"><table><thead><tr><th>日期</th><th>件數</th><th>郵資金額</th><th class="no-print">操作</th></tr></thead><tbody>
+ ${ds.map(d=>`<tr><td>${esc(d.date)}</td><td>${d.qty}</td><td>${fmt(d.amount)}</td><td class="no-print"><button class="btn secondary" onclick="openHistoryDate('${esc(d.date)}')">查看當日</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+let returnToMonth=false;
+window.openHistoryDate=function(d){returnToMonth=true;$('backMonth').classList.remove('hidden');$('date').value=d;renderAll();showMainPage()};
+$('monthSearch').onclick=renderMonthReport;
+function showMonthPage(){document.querySelectorAll('body > section').forEach(el=>{if(el.id!=='historyCard')el.classList.add('hidden')});$('historyCard').classList.remove('hidden');renderMonthReport();window.scrollTo({top:0,behavior:'smooth'})}
+function showMainPage(){document.querySelectorAll('body > section').forEach(el=>{if(el.id!=='historyCard')el.classList.remove('hidden')});$('historyCard').classList.add('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+$('openMonthPage').onclick=()=>{returnToMonth=false;$('backMonth').classList.add('hidden');showMonthPage()};$('backMain').onclick=showMainPage;$('backMonth').onclick=()=>{if(returnToMonth){showMonthPage()}else{$('backMonth').classList.add('hidden')}};
+$('printMonth').onclick=()=>window.print();
+$('exportMonth').onclick=()=>{
+ const month=$('reportMonth').value;if(!month){alert('請先選擇月報月份。');return}
+ const es=monthEntries(month);if(!es.length){alert('所選月份沒有寄信紀錄，無法匯出。');return}
+ const g=new Map(),d=new Map();es.forEach(e=>{const k=e.type+'|'+Number(e.rate||0),q=count(e),a=amount(e);
+ if(!g.has(k))g.set(k,{type:e.type,rate:Number(e.rate||0),qty:0,amount:0});let x=g.get(k);x.qty+=q;x.amount+=a;
+ if(!d.has(e.date))d.set(e.date,{date:e.date,qty:0,amount:0});let y=d.get(e.date);y.qty+=q;y.amount+=a});
+ const rows=[['月報月份',month],[],['依郵件類型與郵資彙總'],['郵件類型','郵資','件數','金額']];
+ [...g.values()].sort((a,b)=>a.type.localeCompare(b.type,'zh-Hant')||a.rate-b.rate).forEach(x=>rows.push([x.type,x.rate,x.qty,x.amount]));
+ rows.push([],['每日郵資紀錄'],['日期','件數','郵資金額']);[...d.values()].sort((a,b)=>a.date.localeCompare(b.date)).forEach(x=>rows.push([x.date,x.qty,x.amount]));
+ const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='郵資月報_'+month+'.csv';a.click();URL.revokeObjectURL(url);
+};
+
 $('rateset').value=rates.map(x=>x.join(',')).join('\n');refreshType();renderAll();
+$('reportMonth').value=today().slice(0,7);
 </script>
 
 
