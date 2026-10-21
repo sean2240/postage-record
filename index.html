@@ -10,7 +10,7 @@
 <body>
 <h1>阿寶每日寄信紀錄</h1>
 <section class="card no-print">
- <div class="row"><div class="field" style="max-width:220px"><label>統計日期</label><input type="date" id="date"></div><button class="btn secondary" id="newday">切換／新增日期</button><button class="btn secondary" id="openMonthPage">月報查詢</button><button class="btn secondary" id="openBackupPage">備份還原</button><button class="btn secondary right hidden" id="backMonth">返回月報</button></div>
+ <div class="row"><div class="field" style="max-width:220px"><label>統計日期</label><input type="date" id="date"></div><button class="btn secondary" id="newday">切換日期</button><button class="btn secondary" id="openMonthPage">月報查詢</button><button class="btn secondary" id="openBackupPage">備份還原</button><button class="btn secondary right hidden" id="backMonth">返回月報</button></div>
 </section>
 <section class="card no-print">
 <h2>新增寄信紀錄</h2>
@@ -50,10 +50,10 @@
 <div id="monthReport"></div><div class="row no-print" style="margin-top:12px"><button class="btn secondary" id="printMonth">列印月報</button><button class="btn secondary" id="exportMonth">匯出月報 CSV</button></div></section>
 <section class="card hidden no-print" id="backupCard">
  <div class="row" style="align-items:center;justify-content:space-between"><h2 style="margin:0">備份還原</h2><button class="btn secondary" id="backBackupMain">← 返回每日紀錄</button></div>
- <p class="muted">選擇備份檔後，月曆會標示有資料的日期；點選單日或日期區間即可還原，也可以完整還原備份。</p>
+ <p class="muted">點選單日或日期區間即可還原，也可以完整還原備份。</p>
  <div class="row" style="align-items:center;margin:12px 0">
-   <button class="btn secondary" id="downloadBackup">下載備份檔</button>
-   <button class="btn secondary" id="chooseBackup">選擇備份檔</button>
+   <button class="btn secondary" id="downloadBackup">備份</button>
+   <button class="btn secondary" id="chooseBackup">還原</button>
    <span id="backupFileName" class="muted">尚未選擇備份檔</span>
    <button class="btn danger right" id="clearLocal">清除本機紀錄</button>
    <input type="file" id="backupFile" accept=".json,application/json" hidden>
@@ -69,7 +69,7 @@
    <p id="backupRangeLabel" class="muted">尚未選擇日期區間</p>
  </div>
  <div class="row" style="margin-top:12px">
-   <button class="btn" id="restoreSelected" disabled>還原勾選日期</button>
+   <button class="btn" id="restoreSelected" disabled>還原指定日期</button>
    <button class="btn secondary" id="restoreAll" disabled>完整還原</button>
  </div>
 </section>
@@ -221,7 +221,7 @@ if(s){
   }
 }
 entries.push(candidate);save();$('start').value='';$('end').value='';$('nonum').value=0;renderAll()};
-$('date').onchange=renderAll;$('newday').onclick=()=>{let d=prompt('輸入要查看／新增的日期（YYYY-MM-DD）',today());if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d)){$('date').value=d;renderAll()}};
+$('date').onchange=renderAll;$('newday').onclick=()=>{let d=prompt('輸入要查看的日期（YYYY-MM-DD）',today());if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d)){$('date').value=d;renderAll()}};
 $('addsplit').onclick=()=>{let a=splits[$('date').value]||[];a.push('');splits[$('date').value]=a;save();renderStats()};
 $('saverates').onclick=()=>{let lines=$('rateset').value.split(/\n/).map(x=>x.trim()).filter(Boolean),next=[];for(let line of lines){let p=line.split(',');if(p.length<2||!p[0].trim()||!Number.isFinite(Number(p[1]))){alert('格式錯誤：每行請輸入「類型,郵資」，例如 普掛,28');return}next.push([p[0].trim(),Number(p[1])])}if(!next.length){alert('至少需要一個郵資選項');return}rates=next;save();refreshType();renderAll();alert('郵資選項已儲存。')};
 $('clearDay').onclick=()=>{if(!confirm('確定清空 '+$('date').value+' 的所有寄信紀錄與收據拆分？'))return;entries=entries.filter(e=>e.date!==$('date').value);delete splits[$('date').value];save();renderAll()};
