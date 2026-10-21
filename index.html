@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>每日寄信紀錄</title>
 <style>
-:root{font-family:system-ui,-apple-system,"Microsoft JhengHei",sans-serif;color:#203044;background:#f4f7fb}*{box-sizing:border-box}body{margin:0;padding:20px;max-width:1100px;margin:auto}h1{font-size:27px;margin:0 0 6px}.sub{color:#66758a;margin:0 0 18px}.card{background:white;border:1px solid #dce4ee;border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 2px 8px #19385a08}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:6px;min-width:130px;flex:1}.field label{font-size:13px;color:#53657b}.field input,.field select{padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;background:#fff;min-width:0}.btn{border:0;border-radius:9px;padding:10px 15px;font:inherit;font-weight:650;cursor:pointer;background:#174b7a;color:#fff}.btn.secondary{background:#e8eef5;color:#203044}.btn.danger{background:#fff0f0;color:#a12b2b}.muted{color:#66758a;font-size:13px}.hidden{display:none!important}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e7edf4;vertical-align:top}th{background:#edf3f9;font-size:13px;color:#455b73}td small{color:#66758a}.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.metric{background:#f2f6fb;border-radius:10px;padding:13px}.metric .big{font-size:24px;font-weight:750}.tag{display:inline-block;background:#e8f2ff;color:#174b7a;border-radius:20px;padding:3px 9px;font-size:12px}.right{margin-left:auto}.splitrow{display:flex;gap:8px;align-items:center;margin:8px 0}.splitrow input{padding:9px;border:1px solid #cbd5e1;border-radius:8px;width:150px}.foot{font-size:12px;color:#718096;margin-top:10px}.receipt-summary{margin-top:14px;padding:14px 16px;background:#f1f4f7;border-left:4px solid #8a99a8;border-radius:8px;color:#344256}.receipt-summary>div{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:16px}.receipt-summary span{font-size:22px;font-weight:750}.receipt-summary small{display:block;margin-top:6px;color:#66758a;font-size:12px}@media print{body>h1{display:none!important}#stats th:nth-child(5),#stats td:nth-child(5){display:none!important}body{background:#fff;padding:0}.no-print{display:none!important}.card{box-shadow:none;border:0;padding:0;margin:0 0 16px}.printtitle{display:block!important}table{font-size:12px}th{background:#eee!important}}
+:root{font-family:system-ui,-apple-system,"Microsoft JhengHei",sans-serif;color:#203044;background:#f4f7fb}*{box-sizing:border-box}body{margin:0;padding:20px;max-width:1100px;margin:auto}h1{font-size:27px;margin:0 0 6px}.sub{color:#66758a;margin:0 0 18px}.card{background:white;border:1px solid #dce4ee;border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 2px 8px #19385a08}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:6px;min-width:130px;flex:1}.field label{font-size:13px;color:#53657b}.field input,.field select{padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;background:#fff;min-width:0}.btn{border:0;border-radius:9px;padding:10px 15px;font:inherit;font-weight:650;cursor:pointer;background:#174b7a;color:#fff}.btn.secondary{background:#e8eef5;color:#203044}.btn.secondary.active{background:#174b7a;color:#fff}.btn.danger{background:#fff0f0;color:#a12b2b}.muted{color:#66758a;font-size:13px}.hidden{display:none!important}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e7edf4;vertical-align:top}th{background:#edf3f9;font-size:13px;color:#455b73}td small{color:#66758a}.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.metric{background:#f2f6fb;border-radius:10px;padding:13px}.metric .big{font-size:24px;font-weight:750}.tag{display:inline-block;background:#e8f2ff;color:#174b7a;border-radius:20px;padding:3px 9px;font-size:12px}.right{margin-left:auto}.splitrow{display:flex;gap:8px;align-items:center;margin:8px 0}.splitrow input{padding:9px;border:1px solid #cbd5e1;border-radius:8px;width:150px}.foot{font-size:12px;color:#718096;margin-top:10px}.receipt-summary{margin-top:14px;padding:14px 16px;background:#f1f4f7;border-left:4px solid #8a99a8;border-radius:8px;color:#344256}.receipt-summary>div{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:16px}.receipt-summary span{font-size:22px;font-weight:750}.receipt-summary small{display:block;margin-top:6px;color:#66758a;font-size:12px}@media print{body>h1{display:none!important}#stats th:nth-child(5),#stats td:nth-child(5){display:none!important}body{background:#fff;padding:0}.no-print{display:none!important}.card{box-shadow:none;border:0;padding:0;margin:0 0 16px}.printtitle{display:block!important}table{font-size:12px}th{background:#eee!important}}
 .history-controls{margin:10px 0 16px}.month-report-title{margin:18px 0 8px;font-size:18px}.month-report-empty{padding:14px;border:1px dashed #cbd5e1;border-radius:10px;color:#66758a;background:#f8fafc}.month-report-table-wrap{overflow-x:auto}.month-report-table-wrap table{min-width:560px}.month-report-total{font-weight:750;background:#edf3f9}.month-report-daily{margin-top:16px}@media print{#historyCard{break-before:page;box-shadow:none;border:0;padding:0}#historyCard .history-controls,#historyCard .no-print{display:none!important}.month-report-table-wrap{overflow:visible}.month-report-table-wrap table{min-width:0}}</style>
 </head>
 <body>
@@ -52,9 +52,10 @@
  <div class="row" style="align-items:center;justify-content:space-between"><h2 style="margin:0">備份還原</h2><button class="btn secondary" id="backBackupMain">← 返回每日紀錄</button></div>
  <p class="muted">點選單日或日期區間即可還原，也可以完整還原備份。</p>
  <div class="row" style="align-items:center;margin:12px 0">
-   <button class="btn secondary" id="downloadBackup">備份</button>
-   <button class="btn secondary" id="chooseBackup">還原</button>
-   <span id="backupFileName" class="muted">尚未選擇備份檔</span>
+   <button class="btn secondary" id="backupModeBtn" aria-pressed="false">備份</button>
+   <button class="btn secondary" id="restoreModeBtn" aria-pressed="false">還原</button>
+   <button class="btn secondary hidden" id="chooseBackup" style="font-size:12px;padding:6px 10px">選擇備份檔</button>
+   <span id="backupFileName" class="muted hidden" style="font-size:12px">尚未選擇備份檔</span>
    <button class="btn danger right" id="clearLocal">清除本機紀錄</button>
    <input type="file" id="backupFile" accept=".json,application/json" hidden>
  </div>
@@ -71,10 +72,14 @@
    </div>
    <div id="backupDates" class="backup-calendar"></div>
    <p id="backupRangeLabel" class="muted">尚未選擇日期區間</p>
- </div>
- <div class="row" style="margin-top:12px">
+ <div class="row hidden" id="restoreActions" style="align-items:center;margin:12px 0">
    <button class="btn" id="restoreSelected" disabled>還原指定日期</button>
    <button class="btn secondary" id="restoreAll" disabled>完整還原</button>
+ </div>
+   <div class="row hidden" id="backupActions" style="align-items:center;margin:12px 0">
+     <button class="btn" id="openBackupRange" disabled>備份指定日期</button>
+     <button class="btn secondary" id="downloadBackup">完整備份</button>
+   </div>
  </div>
 </section>
 
@@ -319,7 +324,7 @@ $('reportMonth').value=today().slice(0,7);
 <script>
 (()=>{
  const $b=id=>document.getElementById(id);
- let backupData=null, backupDates=new Set(), mailBackupDates=new Set(), memoOnlyDates=new Set(), calendarMonth='', rangeStart=null, rangeEnd=null, rangeAnchor=null;
+ let backupData=null, backupDates=new Set(), mailBackupDates=new Set(), memoOnlyDates=new Set(), calendarMonth='', rangeStart=null, rangeEnd=null, rangeAnchor=null, calendarMode='restore';
  const appKeys=['mailEntries','mailSplits','mailRates','mailMemoHtml','mailMemos'];
  const pad=n=>String(n).padStart(2,'0');
  const dateKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -329,7 +334,7 @@ $('reportMonth').value=today().slice(0,7);
  function download(data,name){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
  function renderCalendar(){
   const box=$b('backupDates');
-  if(!backupData){box.innerHTML='<div class="month-report-empty">請先選擇備份檔。</div>';$b('backupCalendarTitle').textContent='備份日期月曆';return;}
+  if(!backupData&&calendarMode!=='backup'){box.innerHTML='<div class="month-report-empty">請先選擇備份檔，或點「備份指定區間」。</div>';$b('backupCalendarTitle').textContent='';return;}
   const [y,m]=calendarMonth.split('-').map(Number),first=new Date(y,m-1,1),last=new Date(y,m,0);
   $b('backupCalendarTitle').textContent=`${y} 年 ${m} 月`;
   let html=['日','一','二','三','四','五','六'].map(x=>`<div class="weekday">${x}</div>`).join('');
@@ -341,12 +346,50 @@ $('reportMonth').value=today().slice(0,7);
   box.innerHTML=html;
   box.querySelectorAll('.day[data-date]').forEach(btn=>btn.onclick=()=>{const d=btn.dataset.date;if(!rangeAnchor){rangeAnchor=d;rangeStart=d;rangeEnd=d}else{rangeStart=d<rangeAnchor?d:rangeAnchor;rangeEnd=d<rangeAnchor?rangeAnchor:d;rangeAnchor=null}renderCalendar();});
   $b('backupRangeLabel').textContent=rangeStart?(rangeStart===rangeEnd?`已選日期：${rangeStart}`:`已選區間：${rangeStart} ～ ${rangeEnd}`):'尚未選擇日期';
-  $b('restoreSelected').disabled=!(rangeStart&&rangeEnd);
+  $b('restoreSelected').disabled=!(backupData&&rangeStart&&rangeEnd);$b('openBackupRange').disabled=!(calendarMode==='backup'&&rangeStart&&rangeEnd);
+  $b('restoreActions').classList.toggle('hidden',calendarMode!=='restore');
  }
+ function setBackupMode(mode){
+  calendarMode=mode;
+  $b('backupActions').classList.toggle('hidden',mode!=='backup');
+  $b('restoreActions').classList.add('hidden');
+  $b('chooseBackup').classList.toggle('hidden',mode!=='restore');
+  $b('backupFileName').classList.toggle('hidden',mode!=='restore');
+  $b('backupModeBtn').classList.toggle('active',mode==='backup');
+  $b('restoreModeBtn').classList.toggle('active',mode==='restore');
+  $b('backupModeBtn').setAttribute('aria-pressed',String(mode==='backup'));
+  $b('restoreModeBtn').setAttribute('aria-pressed',String(mode==='restore'));
+  if(mode==='backup'){
+    backupData=null;
+    backupDates=new Set();mailBackupDates=new Set();memoOnlyDates=new Set();
+    const local=snapshot();
+    (local.mailEntries||[]).forEach(x=>{if(x?.date){backupDates.add(x.date);mailBackupDates.add(x.date)}});
+    Object.keys(local.mailSplits||{}).forEach(d=>{if((local.mailSplits[d]||[]).length){backupDates.add(d);mailBackupDates.add(d)}});
+    Object.entries(local.mailMemos||{}).forEach(([d,v])=>{if(typeof v==='string'&&v.trim()){backupDates.add(d);if(!mailBackupDates.has(d))memoOnlyDates.add(d)}});
+    rangeStart=null;rangeEnd=null;rangeAnchor=null;
+    const dates=[...backupDates].sort();calendarMonth=dates.length?monthKey(parseDate(dates[0])):monthKey(new Date());
+    $b('backupFileName').textContent='選取本機資料的備份日期區間';
+    $b('restoreAll').disabled=true;
+    renderCalendar();
+  } else {
+    rangeStart=null;rangeEnd=null;rangeAnchor=null;
+    renderCalendar();
+  }
+ }
+ $b('backupModeBtn').onclick=()=>setBackupMode('backup');
+ $b('restoreModeBtn').onclick=()=>setBackupMode('restore');
  $b('backupPrevMonth').onclick=()=>{if(!calendarMonth)return;const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=monthKey(new Date(y,m-2,1));renderCalendar()};
  $b('backupNextMonth').onclick=()=>{if(!calendarMonth)return;const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=monthKey(new Date(y,m,1));renderCalendar()};
  $b('downloadBackup').onclick=()=>download(snapshot(),'郵資統計備份_'+new Date().toISOString().slice(0,10)+'.json');
+ $b('openBackupRange').onclick=()=>{if(!rangeStart||!rangeEnd)return;const a=rangeStart,z=rangeEnd;
+  const all=snapshot(),entries=(all.mailEntries||[]).filter(x=>x?.date>=a&&x?.date<=z),splits={};
+  Object.entries(all.mailSplits||{}).forEach(([d,v])=>{if(d>=a&&d<=z)splits[d]=v});
+  const memos={};Object.entries(all.mailMemos||{}).forEach(([d,v])=>{if(d>=a&&d<=z)memos[d]=v});
+  download({...all,mailEntries:entries,mailSplits:splits,mailMemos:memos,backupRange:{start:a,end:z}},`郵資統計備份_${a}_${z}.json`);
+ };
  $b('chooseBackup').onclick=()=>$b('backupFile').click();
+
+
  $b('backupFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{
   const raw=JSON.parse(await file.text());
   // Support the current export schema and earlier backups that used shorter field names.
@@ -367,7 +410,7 @@ $('reportMonth').value=today().slice(0,7);
     if(d&&!x.date)return {...x,date:String(d).slice(0,10)};
     return x;
   });
-  backupData=data;$b('backupFileName').textContent=file.name;backupDates=new Set();mailBackupDates=new Set();memoOnlyDates=new Set();
+  backupData=data;setBackupMode('restore');$b('backupFileName').textContent=file.name;backupDates=new Set();mailBackupDates=new Set();memoOnlyDates=new Set();
   data.mailEntries.forEach(x=>{if(x?.date){backupDates.add(x.date);mailBackupDates.add(x.date)}});
   Object.keys(data.mailSplits||{}).forEach(d=>{if((data.mailSplits[d]||[]).length){backupDates.add(d);mailBackupDates.add(d)}});
   // Memo-only dates appear too, with a green marker instead of the mail-data red marker.
