@@ -259,8 +259,14 @@ let returnToMonth=false;
 window.openHistoryDate=function(d){returnToMonth=true;$('backMonth').classList.remove('hidden');$('date').value=d;renderAll();showMainPage()};
 $('monthSearch').onclick=renderMonthReport;
 function showMonthPage(){document.querySelectorAll('body > section').forEach(el=>{if(el.id!=='historyCard')el.classList.add('hidden')});$('historyCard').classList.remove('hidden');renderMonthReport();window.scrollTo({top:0,behavior:'smooth'})}
-function showMainPage(){document.querySelectorAll('body > section').forEach(el=>{if(el.id!=='historyCard')el.classList.remove('hidden')});$('historyCard').classList.add('hidden');window.scrollTo({top:0,behavior:'smooth'})}
-$('openMonthPage').onclick=()=>{returnToMonth=false;$('backMonth').classList.add('hidden');showMonthPage()};$('backMain').onclick=showMainPage;$('backMonth').onclick=()=>{if(returnToMonth){showMonthPage()}else{$('backMonth').classList.add('hidden')}};
+function showMainPage(){
+ document.querySelectorAll('body > section').forEach(el=>{
+  if(el.id==='historyCard'||el.id==='backupCard')el.classList.add('hidden');
+  else el.classList.remove('hidden');
+ });
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+$('backMonth').onclick=()=>{if(returnToMonth){showMonthPage()}else{$('backMonth').classList.add('hidden')}};
 $('printMonth').onclick=()=>window.print();
 $('exportMonth').onclick=()=>{
  const month=$('reportMonth').value;if(!month){alert('請先選擇月報月份。');return}
@@ -461,7 +467,10 @@ $('reportMonth').value=today().slice(0,7);
  function showBackup(){mainSections.forEach(el=>el.classList.add('hidden'));$b('historyCard').classList.add('hidden');$b('backupCard').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
  function showMain(){mainSections.forEach(el=>el.classList.remove('hidden'));$b('historyCard').classList.add('hidden');$b('backupCard').classList.add('hidden');window.scrollTo({top:0,behavior:'smooth'})}
  $b('openBackupPage').onclick=showBackup;$b('backBackupMain').onclick=showMain;
- $b('openMonthPage').onclick=()=>{showBackup();$b('backupCard').classList.add('hidden');$b('historyCard').classList.remove('hidden');document.querySelectorAll('body > section').forEach(el=>{if(el.id!=='historyCard')el.classList.add('hidden')});$b('backMonth').classList.add('hidden')};
+ $b('openMonthPage').onclick=()=>{
+  $b('backMonth').classList.add('hidden');
+  showMonthPage();
+ };
  $b('backMain').onclick=showMain;
 })();
 </script>
