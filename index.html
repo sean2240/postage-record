@@ -38,7 +38,7 @@
 <div><strong>請款收據金額</strong><div id="splits"></div><button class="btn secondary" id="addsplit">＋ 新增請款收據</button></div>
 
 
-<div class="summary" style="margin-top:14px"><div class="metric"><div class="muted">郵資總額</div><div class="big" id="receiptTotal">NT$0</div></div><div class="metric"><div class="muted">請款收據合計</div><div class="big" id="specialTotal">NT$0</div></div><div class="metric"><div class="muted">一般收據</div><div class="big" id="regularTotal">NT$0</div></div><div class="metric"><div class="muted">拆分差額（應為 0）</div><div class="big" id="delta">NT$0</div></div></div>
+<div class="summary" style="margin-top:14px"><div class="metric"><div class="muted">郵資總額</div><div class="big" id="receiptTotal">NT$0</div></div><div class="metric"><div class="muted">請款收據合計</div><div class="big" id="specialTotal">NT$0</div></div><div class="metric"><div class="muted">一般收據</div><div class="big" id="regularTotal">NT$0</div></div></div>
 <div class="row no-print" style="margin-top:14px"><button class="btn" id="print">列印統計</button><button class="btn secondary" id="csv">匯出今日 CSV</button></div>
 </section>
 <section class="card hidden" id="historyCard">
@@ -168,7 +168,6 @@ function renderReceipt(total){
   $('receiptTotal').textContent=fmt(total);
   $('specialTotal').textContent=fmt(special);
   $('regularTotal').textContent=fmt(regular);
-  $('delta').textContent=fmt(total-(special+regular));
   $('splits').innerHTML=arr.map((v,i)=>`<div class="splitrow"><label>請款收據 ${i+1}</label><input type="number" min="0" value="${v}" onchange="changeSplit(${i},this.value)" placeholder="金額"><button class="btn danger" onclick="removeSplit(${i})">移除</button></div>`).join('')||'<p class="muted">沒有請款收據時，全部金額會列為一般收據。</p>';
   if(regular<0)$('regularTotal').style.color='#b42318';else $('regularTotal').style.color='';
   // Print-friendly receipt issuance list, integrated into the daily statistics.
