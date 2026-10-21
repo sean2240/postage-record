@@ -64,7 +64,11 @@
      <strong id="backupCalendarTitle"></strong>
      <button class="btn secondary" id="backupNextMonth">下個月 →</button>
    </div>
-   
+
+   <div class="backup-calendar-legend" aria-label="日期標示說明">
+     <span><i class="legend-dot red"></i>紅點：有寄信紀錄或收據資料</span>
+     <span><i class="legend-dot green"></i>綠點：只有備忘錄</span>
+   </div>
    <div id="backupDates" class="backup-calendar"></div>
    <p id="backupRangeLabel" class="muted">尚未選擇日期區間</p>
  </div>
@@ -177,7 +181,7 @@ function renderReceipt(total){
   }
 }
 window.delEntry=i=>{entries.splice(i,1);save();renderAll()};window.changeSplit=(i,v)=>{let a=splits[$('date').value]||[];a[i]=Number(v)||0;splits[$('date').value]=a;save();renderStats()};window.removeSplit=i=>{let a=splits[$('date').value]||[];a.splice(i,1);splits[$('date').value]=a;save();renderStats()};
-function renderAll(){ $('printDate').textContent='統計日期：'+$('date').value; renderDuplicateAlert();renderRecords();renderStats()}
+function renderAll(){ if(window.mailMemoStore)window.mailMemoStore.load(); $('printDate').textContent='統計日期：'+$('date').value; renderDuplicateAlert();renderRecords();renderStats()}
 function mailNumberPrefixCandidates(){
   const prefixes=new Set();
   dayEntries().forEach(x=>{[x.start,x.end].forEach(v=>{if(/^\d{6}$/.test(String(v||''))){let k=Math.floor(Number(v)/1000);prefixes.add(k);prefixes.add(k-1);prefixes.add(k+1);}})});
@@ -288,15 +292,26 @@ $('reportMonth').value=today().slice(0,7);
 </style>
 <script>
 (()=>{
-  const box=document.getElementById('memoPrint'),card=document.getElementById('memoCard'),editor=document.getElementById('memoText');
-  editor.innerHTML=localStorage.getItem('mailMemoHtml')||'';
+  const box=document.getElementById('memoPrint'),card=document.getElementById('memoCard'),editor=document.getElementById('memoText'),dateInput=document.getElementById('date');
+  // Date-keyed memo storage; migrate the previous shared memo to the currently selected date once.
+  let memos=JSON.parse(localStorage.getItem('mailMemos')||'{}');
+  if(!Object.prototype.hasOwnProperty.call(localStorage,'mailMemos')){
+    const legacy=localStorage.getItem('mailMemoHtml')||'';
+    if(legacy) memos[dateInput.value]=legacy;
+    localStorage.setItem('mailMemos',JSON.stringify(memos));
+  }
+  function saveMemo(){memos[dateInput.value]=editor.innerHTML;localStorage.setItem('mailMemos',JSON.stringify(memos));}
+  function loadMemo(){memos=JSON.parse(localStorage.getItem('mailMemos')||'{}');editor.innerHTML=memos[dateInput.value]||'';}
   function syncPrint(){card.classList.toggle('memo-print-enabled',box.checked)}
   box.addEventListener('change',syncPrint);
-  editor.addEventListener('input',()=>localStorage.setItem('mailMemoHtml',editor.innerHTML));
-  document.getElementById('memoBold').addEventListener('click',()=>{editor.focus();document.execCommand('bold');localStorage.setItem('mailMemoHtml',editor.innerHTML)});
-  document.getElementById('memoFont').addEventListener('change',e=>{editor.focus();document.execCommand('fontName',false,e.target.value);localStorage.setItem('mailMemoHtml',editor.innerHTML)});
-  document.getElementById('memoSize').addEventListener('change',e=>{editor.focus();document.execCommand('fontSize',false,e.target.value);localStorage.setItem('mailMemoHtml',editor.innerHTML)});
-  syncPrint();
+  editor.addEventListener('input',saveMemo);
+  document.getElementById('memoBold').addEventListener('click',()=>{editor.focus();document.execCommand('bold');saveMemo()});
+  document.getElementById('memoFont').addEventListener('change',e=>{editor.focus();document.execCommand('fontName',false,e.target.value);saveMemo()});
+  document.getElementById('memoSize').addEventListener('change',e=>{editor.focus();document.execCommand('fontSize',false,e.target.value);saveMemo()});
+  dateInput.addEventListener('change',loadMemo);
+  // Keep this memo module available to the backup/restore module below.
+  window.mailMemoStore={getAll:()=>JSON.parse(localStorage.getItem('mailMemos')||'{}'),setAll:v=>{localStorage.setItem('mailMemos',JSON.stringify(v||{}));loadMemo();},load:loadMemo,save:saveMemo};
+  loadMemo();syncPrint();
 })();
 </script>
 
@@ -304,13 +319,13 @@ $('reportMonth').value=today().slice(0,7);
 <script>
 (()=>{
  const $b=id=>document.getElementById(id);
- let backupData=null, backupDates=new Set(), calendarMonth='', rangeStart=null, rangeEnd=null, rangeAnchor=null;
- const appKeys=['mailEntries','mailSplits','mailRates','mailMemoHtml'];
+ let backupData=null, backupDates=new Set(), mailBackupDates=new Set(), memoOnlyDates=new Set(), calendarMonth='', rangeStart=null, rangeEnd=null, rangeAnchor=null;
+ const appKeys=['mailEntries','mailSplits','mailRates','mailMemoHtml','mailMemos'];
  const pad=n=>String(n).padStart(2,'0');
  const dateKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
  const parseDate=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
  const monthKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}`;
- function snapshot(){return {format:'mail-postage-backup',version:1,createdAt:new Date().toISOString(),mailEntries:JSON.parse(localStorage.getItem('mailEntries')||'[]'),mailSplits:JSON.parse(localStorage.getItem('mailSplits')||'{}'),mailRates:JSON.parse(localStorage.getItem('mailRates')||'null'),mailMemoHtml:localStorage.getItem('mailMemoHtml')||''};}
+ function snapshot(){return {format:'mail-postage-backup',version:1,createdAt:new Date().toISOString(),mailEntries:JSON.parse(localStorage.getItem('mailEntries')||'[]'),mailSplits:JSON.parse(localStorage.getItem('mailSplits')||'{}'),mailRates:JSON.parse(localStorage.getItem('mailRates')||'null'),mailMemos:JSON.parse(localStorage.getItem('mailMemos')||'{}'),mailMemoHtml:localStorage.getItem('mailMemoHtml')||''};}
  function download(data,name){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
  function renderCalendar(){
   const box=$b('backupDates');
@@ -320,8 +335,8 @@ $('reportMonth').value=today().slice(0,7);
   let html=['日','一','二','三','四','五','六'].map(x=>`<div class="weekday">${x}</div>`).join('');
   for(let i=0;i<first.getDay();i++)html+='<div></div>';
   for(let day=1;day<=last.getDate();day++){
-   const key=dateKey(new Date(y,m-1,day)),has=backupDates.has(key),isEnd=key===rangeStart||key===rangeEnd,inRange=rangeStart&&rangeEnd&&key>=rangeStart&&key<=rangeEnd;
-   html+=`<button type="button" class="day${has?' has-data':''}${inRange?' in-range':''}${isEnd?' selected':''}" data-date="${key}" >${day}</button>`;
+   const key=dateKey(new Date(y,m-1,day)),has=backupDates.has(key),isMail=mailBackupDates.has(key),isMemoOnly=memoOnlyDates.has(key),isEnd=key===rangeStart||key===rangeEnd,inRange=rangeStart&&rangeEnd&&key>=rangeStart&&key<=rangeEnd;
+   html+=`<button type="button" class="day${has?' has-data':''}${isMail?' has-mail-data':''}${isMemoOnly?' memo-only-data':''}${inRange?' in-range':''}${isEnd?' selected':''}" data-date="${key}" >${day}</button>`;
   }
   box.innerHTML=html;
   box.querySelectorAll('.day[data-date]').forEach(btn=>btn.onclick=()=>{const d=btn.dataset.date;if(!rangeAnchor){rangeAnchor=d;rangeStart=d;rangeEnd=d}else{rangeStart=d<rangeAnchor?d:rangeAnchor;rangeEnd=d<rangeAnchor?rangeAnchor:d;rangeAnchor=null}renderCalendar();});
@@ -352,23 +367,32 @@ $('reportMonth').value=today().slice(0,7);
     if(d&&!x.date)return {...x,date:String(d).slice(0,10)};
     return x;
   });
-  backupData=data;$b('backupFileName').textContent=file.name;backupDates=new Set();
-  data.mailEntries.forEach(x=>{if(x?.date)backupDates.add(x.date)});
-  Object.keys(data.mailSplits||{}).forEach(d=>{if((data.mailSplits[d]||[]).length)backupDates.add(d)});
+  backupData=data;$b('backupFileName').textContent=file.name;backupDates=new Set();mailBackupDates=new Set();memoOnlyDates=new Set();
+  data.mailEntries.forEach(x=>{if(x?.date){backupDates.add(x.date);mailBackupDates.add(x.date)}});
+  Object.keys(data.mailSplits||{}).forEach(d=>{if((data.mailSplits[d]||[]).length){backupDates.add(d);mailBackupDates.add(d)}});
+  // Memo-only dates appear too, with a green marker instead of the mail-data red marker.
+  Object.entries(data.mailMemos||{}).forEach(([d,v])=>{if(typeof v==='string'&&v.trim()){backupDates.add(d);if(!mailBackupDates.has(d))memoOnlyDates.add(d)}});
   rangeStart=null;rangeEnd=null;rangeAnchor=null;const sorted=[...backupDates].sort();calendarMonth=sorted.length?monthKey(parseDate(sorted[0])):monthKey(new Date());
   if($b('backupCalendarHint'))$b('backupCalendarHint').textContent=`這份備份共有 ${sorted.length} 個有資料的日期，以紅點標示。`;
   $b('restoreAll').disabled=false;renderCalendar();
  }catch(err){backupData=null;alert('讀取備份檔失敗：'+(err&&err.message?err.message:'請確認檔案格式。'));renderCalendar()}};
  $b('restoreSelected').onclick=()=>{if(!backupData||!rangeStart||!rangeEnd)return;const a=rangeStart,z=rangeEnd;
-  if(!confirm(`確定還原 ${a} 至 ${z}？這段期間本機紀錄將由備份內容取代（備份中沒有資料的日期會清空）。`))return;
+  if(!confirm(`確定還原 ${a} 至 ${z}？這段期間的郵件紀錄與收據拆分將由備份內容取代。`))return;
+  const includeMemos=confirm('是否一併還原這段日期區間的備忘錄？按「確定」會覆蓋區間內備忘錄；按「取消」則保留目前備忘錄。');
   const current=JSON.parse(localStorage.getItem('mailEntries')||'[]'),incoming=backupData.mailEntries.filter(x=>x.date>=a&&x.date<=z);
   localStorage.setItem('mailEntries',JSON.stringify(current.filter(x=>x.date<a||x.date>z).concat(incoming)));
   const splits=JSON.parse(localStorage.getItem('mailSplits')||'{}');Object.keys(splits).forEach(d=>{if(d>=a&&d<=z)delete splits[d]});
   Object.entries(backupData.mailSplits||{}).forEach(([d,v])=>{if(d>=a&&d<=z)splits[d]=v});localStorage.setItem('mailSplits',JSON.stringify(splits));
+  if(includeMemos){
+   const memos=JSON.parse(localStorage.getItem('mailMemos')||'{}');
+   Object.keys(memos).forEach(d=>{if(d>=a&&d<=z)delete memos[d]});
+   Object.entries(backupData.mailMemos||{}).forEach(([d,v])=>{if(d>=a&&d<=z)memos[d]=v});
+   localStorage.setItem('mailMemos',JSON.stringify(memos));
+  }
   alert('已還原所選日期區間。');location.reload();
  };
- $b('restoreAll').onclick=()=>{if(!backupData)return;if(!confirm('確定完整還原？本機郵件紀錄、收據拆分、郵資選項與備忘錄將被備份檔取代。'))return;if(!confirm('再次確認：完整還原會覆蓋目前資料，確定繼續？'))return;
-  localStorage.setItem('mailEntries',JSON.stringify(backupData.mailEntries||[]));localStorage.setItem('mailSplits',JSON.stringify(backupData.mailSplits||{}));if(backupData.mailRates)localStorage.setItem('mailRates',JSON.stringify(backupData.mailRates));else localStorage.removeItem('mailRates');localStorage.setItem('mailMemoHtml',backupData.mailMemoHtml||'');alert('已完整還原備份。');location.reload()};
+ $b('restoreAll').onclick=()=>{if(!backupData)return;if(!confirm('確定完整還原？本機郵件紀錄、收據拆分與郵資選項將被備份檔取代。'))return;const includeMemos=confirm('是否一併完整還原備忘錄？按「確定」會以備份檔的所有日期備忘錄取代目前內容；按「取消」則保留目前備忘錄。');if(!confirm('再次確認：完整還原會覆蓋所選資料，確定繼續？'))return;
+  localStorage.setItem('mailEntries',JSON.stringify(backupData.mailEntries||[]));localStorage.setItem('mailSplits',JSON.stringify(backupData.mailSplits||{}));if(backupData.mailRates)localStorage.setItem('mailRates',JSON.stringify(backupData.mailRates));else localStorage.removeItem('mailRates');if(includeMemos){localStorage.setItem('mailMemos',JSON.stringify(backupData.mailMemos||{}));localStorage.removeItem('mailMemoHtml');}alert('已完整還原備份。');location.reload()};
  $b('clearLocal').onclick=()=>{if(!confirm('確定清除本機所有郵資統計資料？此操作無法復原。'))return;if(!confirm('再次確認：將刪除郵件紀錄、收據拆分、郵資選項與備忘錄。'))return;appKeys.forEach(k=>localStorage.removeItem(k));alert('本機紀錄已清除。');location.reload()};
  const mainSections=[...document.querySelectorAll('body > section')].filter(el=>!['historyCard','backupCard'].includes(el.id));
  function showBackup(){mainSections.forEach(el=>el.classList.add('hidden'));$b('historyCard').classList.add('hidden');$b('backupCard').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
@@ -386,10 +410,19 @@ $('reportMonth').value=today().slice(0,7);
 .backup-calendar .weekday{padding:8px 2px;text-align:center;color:#64748b;font-size:12px;font-weight:700}
 .backup-calendar .day{min-height:54px;position:relative;border:1px solid #dce4ee;border-radius:9px;background:#fff;color:#203044;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;font:inherit;cursor:pointer}
 .backup-calendar .day.has-data:after{content:"";width:7px;height:7px;border-radius:50%;background:#dc2626;position:absolute;bottom:6px}
+.backup-calendar .day.memo-only-data:after{content:"";width:7px;height:7px;border-radius:50%;background:#16a34a;position:absolute;bottom:6px}
 .backup-calendar .day.selected{background:#dbeafe;border-color:#2563eb;color:#174b7a;font-weight:750}
 .backup-calendar .day.in-range{background:#eff6ff;border-color:#bfdbfe}
 .backup-calendar .day:disabled{opacity:.35;cursor:default}
 @media(max-width:480px){.backup-calendar{gap:3px}.backup-calendar .day{min-height:43px;border-radius:6px;font-size:13px}}
+</style>
+
+<style>
+.backup-calendar-legend{display:flex;flex-wrap:wrap;gap:14px;margin:0 0 8px;font-size:12px;color:#64748b}
+.backup-calendar-legend span{display:inline-flex;align-items:center;gap:5px}
+.backup-calendar-legend .legend-dot{display:inline-block;width:7px;height:7px;border-radius:50%}
+.backup-calendar-legend .legend-dot.red{background:#dc2626}
+.backup-calendar-legend .legend-dot.green{background:#16a34a}
 </style>
 
 </body></html>
