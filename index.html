@@ -10,7 +10,7 @@
 <body>
 <h1>阿寶每日寄信紀錄</h1>
 <section class="card no-print">
- <div class="row"><div class="field" style="max-width:220px"><label>統計日期</label><input type="date" id="date"></div><button class="btn secondary" id="newday">切換／新增日期</button><button class="btn secondary" id="openMonthPage">月報查詢</button><button class="btn secondary right hidden" id="backMonth">返回月報</button></div>
+ <div class="row"><div class="field" style="max-width:220px"><label>統計日期</label><input type="date" id="date"></div><button class="btn secondary" id="newday">切換／新增日期</button><button class="btn secondary" id="openMonthPage">月報查詢</button><button class="btn secondary" id="openBackupPage">備份還原</button><button class="btn secondary right hidden" id="backMonth">返回月報</button></div>
 </section>
 <section class="card no-print">
 <h2>新增寄信紀錄</h2>
@@ -47,7 +47,34 @@
 <div class="field" style="max-width:220px"><label for="reportMonth">月報月份</label><input type="month" id="reportMonth"></div>
 <button class="btn" id="monthSearch">查詢月報</button></div>
 <p class="muted">彙整所選月份的郵件件數與郵資；可查看各日紀錄或匯出月報。</p></div>
-<div id="monthReport"></div><div class="row no-print" style="margin-top:12px"><button class="btn secondary" id="printMonth">列印月報</button><button class="btn secondary" id="exportMonth">匯出月報 CSV</button></div></section><section class="card memo-card" id="memoCard">
+<div id="monthReport"></div><div class="row no-print" style="margin-top:12px"><button class="btn secondary" id="printMonth">列印月報</button><button class="btn secondary" id="exportMonth">匯出月報 CSV</button></div></section>
+<section class="card hidden no-print" id="backupCard">
+ <div class="row" style="align-items:center;justify-content:space-between"><h2 style="margin:0">備份還原</h2><button class="btn secondary" id="backBackupMain">← 返回每日紀錄</button></div>
+ <p class="muted">選擇備份檔後，月曆會標示有資料的日期；點選單日或日期區間即可還原，也可以完整還原備份。</p>
+ <div class="row" style="align-items:center;margin:12px 0">
+   <button class="btn secondary" id="downloadBackup">下載備份檔</button>
+   <button class="btn secondary" id="chooseBackup">選擇備份檔</button>
+   <span id="backupFileName" class="muted">尚未選擇備份檔</span>
+   <button class="btn danger right" id="clearLocal">清除本機紀錄</button>
+   <input type="file" id="backupFile" accept=".json,application/json" hidden>
+ </div>
+ <div class="backup-calendar-wrap">
+   <div class="row" style="align-items:center;justify-content:space-between;margin:80px 0 12px">
+     <button class="btn secondary" id="backupPrevMonth">← 上個月</button>
+     <strong id="backupCalendarTitle"></strong>
+     <button class="btn secondary" id="backupNextMonth">下個月 →</button>
+   </div>
+   
+   <div id="backupDates" class="backup-calendar"></div>
+   <p id="backupRangeLabel" class="muted">尚未選擇日期區間</p>
+ </div>
+ <div class="row" style="margin-top:12px">
+   <button class="btn" id="restoreSelected" disabled>還原勾選日期</button>
+   <button class="btn secondary" id="restoreAll" disabled>完整還原</button>
+ </div>
+</section>
+
+<section class="card memo-card" id="memoCard">
   <div class="row memo-heading"><h2 style="margin:0">備忘錄</h2><label class="memo-print-toggle"><input type="checkbox" id="memoPrint"> 列印</label></div>
   <div class="memo-toolbar no-print" role="toolbar" aria-label="備忘錄文字格式">
     <select id="memoFont" aria-label="字體"><option value="DFKai-SB">標楷體</option><option value="PMingLiU">新細明體</option><option value="Microsoft JhengHei">微軟正黑體</option><option value="Arial">Arial</option></select>
@@ -272,5 +299,97 @@ $('reportMonth').value=today().slice(0,7);
   syncPrint();
 })();
 </script>
+
+
+<script>
+(()=>{
+ const $b=id=>document.getElementById(id);
+ let backupData=null, backupDates=new Set(), calendarMonth='', rangeStart=null, rangeEnd=null, rangeAnchor=null;
+ const appKeys=['mailEntries','mailSplits','mailRates','mailMemoHtml'];
+ const pad=n=>String(n).padStart(2,'0');
+ const dateKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+ const parseDate=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+ const monthKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+ function snapshot(){return {format:'mail-postage-backup',version:1,createdAt:new Date().toISOString(),mailEntries:JSON.parse(localStorage.getItem('mailEntries')||'[]'),mailSplits:JSON.parse(localStorage.getItem('mailSplits')||'{}'),mailRates:JSON.parse(localStorage.getItem('mailRates')||'null'),mailMemoHtml:localStorage.getItem('mailMemoHtml')||''};}
+ function download(data,name){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
+ function renderCalendar(){
+  const box=$b('backupDates');
+  if(!backupData){box.innerHTML='<div class="month-report-empty">請先選擇備份檔。</div>';$b('backupCalendarTitle').textContent='備份日期月曆';return;}
+  const [y,m]=calendarMonth.split('-').map(Number),first=new Date(y,m-1,1),last=new Date(y,m,0);
+  $b('backupCalendarTitle').textContent=`${y} 年 ${m} 月`;
+  let html=['日','一','二','三','四','五','六'].map(x=>`<div class="weekday">${x}</div>`).join('');
+  for(let i=0;i<first.getDay();i++)html+='<div></div>';
+  for(let day=1;day<=last.getDate();day++){
+   const key=dateKey(new Date(y,m-1,day)),has=backupDates.has(key),isEnd=key===rangeStart||key===rangeEnd,inRange=rangeStart&&rangeEnd&&key>=rangeStart&&key<=rangeEnd;
+   html+=`<button type="button" class="day${has?' has-data':''}${inRange?' in-range':''}${isEnd?' selected':''}" data-date="${key}" >${day}</button>`;
+  }
+  box.innerHTML=html;
+  box.querySelectorAll('.day[data-date]').forEach(btn=>btn.onclick=()=>{const d=btn.dataset.date;if(!rangeAnchor){rangeAnchor=d;rangeStart=d;rangeEnd=d}else{rangeStart=d<rangeAnchor?d:rangeAnchor;rangeEnd=d<rangeAnchor?rangeAnchor:d;rangeAnchor=null}renderCalendar();});
+  $b('backupRangeLabel').textContent=rangeStart?(rangeStart===rangeEnd?`已選日期：${rangeStart}`:`已選區間：${rangeStart} ～ ${rangeEnd}`):'尚未選擇日期';
+  $b('restoreSelected').disabled=!(rangeStart&&rangeEnd);
+ }
+ $b('backupPrevMonth').onclick=()=>{if(!calendarMonth)return;const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=monthKey(new Date(y,m-2,1));renderCalendar()};
+ $b('backupNextMonth').onclick=()=>{if(!calendarMonth)return;const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=monthKey(new Date(y,m,1));renderCalendar()};
+ $b('downloadBackup').onclick=()=>download(snapshot(),'郵資統計備份_'+new Date().toISOString().slice(0,10)+'.json');
+ $b('chooseBackup').onclick=()=>$b('backupFile').click();
+ $b('backupFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{
+  const raw=JSON.parse(await file.text());
+  // Support the current export schema and earlier backups that used shorter field names.
+  const data=Array.isArray(raw)?{mailEntries:raw,mailSplits:{}}:{
+    ...(raw||{}),
+    mailEntries:raw?.mailEntries??raw?.entries??raw?.records??raw?.data?.mailEntries??raw?.data?.entries,
+    mailSplits:raw?.mailSplits??raw?.splits??raw?.receipts??raw?.data?.mailSplits??{}
+  };
+  if(!data||!Array.isArray(data.mailEntries)||!data.mailSplits||typeof data.mailSplits!=='object'){
+    const keys=raw&&typeof raw==='object'?Object.keys(raw).join('、'):'（非物件資料';
+    alert('讀取備份檔失敗：找不到郵件紀錄資料。檔案欄位：'+keys);
+    backupData=null;renderCalendar();return
+  }
+  // Normalize common legacy date fields to YYYY-MM-DD so the calendar can mark them.
+  data.mailEntries=data.mailEntries.map(x=>{
+    if(!x||typeof x!=='object')return x;
+    const d=x.date??x.day??x.mailDate??x.createdDate;
+    if(d&&!x.date)return {...x,date:String(d).slice(0,10)};
+    return x;
+  });
+  backupData=data;$b('backupFileName').textContent=file.name;backupDates=new Set();
+  data.mailEntries.forEach(x=>{if(x?.date)backupDates.add(x.date)});
+  Object.keys(data.mailSplits||{}).forEach(d=>{if((data.mailSplits[d]||[]).length)backupDates.add(d)});
+  rangeStart=null;rangeEnd=null;rangeAnchor=null;const sorted=[...backupDates].sort();calendarMonth=sorted.length?monthKey(parseDate(sorted[0])):monthKey(new Date());
+  if($b('backupCalendarHint'))$b('backupCalendarHint').textContent=`這份備份共有 ${sorted.length} 個有資料的日期，以紅點標示。`;
+  $b('restoreAll').disabled=false;renderCalendar();
+ }catch(err){backupData=null;alert('讀取備份檔失敗：'+(err&&err.message?err.message:'請確認檔案格式。'));renderCalendar()}};
+ $b('restoreSelected').onclick=()=>{if(!backupData||!rangeStart||!rangeEnd)return;const a=rangeStart,z=rangeEnd;
+  if(!confirm(`確定還原 ${a} 至 ${z}？這段期間本機紀錄將由備份內容取代（備份中沒有資料的日期會清空）。`))return;
+  const current=JSON.parse(localStorage.getItem('mailEntries')||'[]'),incoming=backupData.mailEntries.filter(x=>x.date>=a&&x.date<=z);
+  localStorage.setItem('mailEntries',JSON.stringify(current.filter(x=>x.date<a||x.date>z).concat(incoming)));
+  const splits=JSON.parse(localStorage.getItem('mailSplits')||'{}');Object.keys(splits).forEach(d=>{if(d>=a&&d<=z)delete splits[d]});
+  Object.entries(backupData.mailSplits||{}).forEach(([d,v])=>{if(d>=a&&d<=z)splits[d]=v});localStorage.setItem('mailSplits',JSON.stringify(splits));
+  alert('已還原所選日期區間。');location.reload();
+ };
+ $b('restoreAll').onclick=()=>{if(!backupData)return;if(!confirm('確定完整還原？本機郵件紀錄、收據拆分、郵資選項與備忘錄將被備份檔取代。'))return;if(!confirm('再次確認：完整還原會覆蓋目前資料，確定繼續？'))return;
+  localStorage.setItem('mailEntries',JSON.stringify(backupData.mailEntries||[]));localStorage.setItem('mailSplits',JSON.stringify(backupData.mailSplits||{}));if(backupData.mailRates)localStorage.setItem('mailRates',JSON.stringify(backupData.mailRates));else localStorage.removeItem('mailRates');localStorage.setItem('mailMemoHtml',backupData.mailMemoHtml||'');alert('已完整還原備份。');location.reload()};
+ $b('clearLocal').onclick=()=>{if(!confirm('確定清除本機所有郵資統計資料？此操作無法復原。'))return;if(!confirm('再次確認：將刪除郵件紀錄、收據拆分、郵資選項與備忘錄。'))return;appKeys.forEach(k=>localStorage.removeItem(k));alert('本機紀錄已清除。');location.reload()};
+ const mainSections=[...document.querySelectorAll('body > section')].filter(el=>!['historyCard','backupCard'].includes(el.id));
+ function showBackup(){mainSections.forEach(el=>el.classList.add('hidden'));$b('historyCard').classList.add('hidden');$b('backupCard').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+ function showMain(){mainSections.forEach(el=>el.classList.remove('hidden'));$b('historyCard').classList.add('hidden');$b('backupCard').classList.add('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+ $b('openBackupPage').onclick=showBackup;$b('backBackupMain').onclick=showMain;
+ $b('openMonthPage').onclick=()=>{showBackup();$b('backupCard').classList.add('hidden');$b('historyCard').classList.remove('hidden');document.querySelectorAll('body > section').forEach(el=>{if(el.id!=='historyCard')el.classList.add('hidden')});$b('backMonth').classList.add('hidden')};
+ $b('backMain').onclick=showMain;
+})();
+</script>
+
+
+<style>
+.backup-calendar-wrap{margin-top:80px}
+.backup-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.backup-calendar .weekday{padding:8px 2px;text-align:center;color:#64748b;font-size:12px;font-weight:700}
+.backup-calendar .day{min-height:54px;position:relative;border:1px solid #dce4ee;border-radius:9px;background:#fff;color:#203044;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;font:inherit;cursor:pointer}
+.backup-calendar .day.has-data:after{content:"";width:7px;height:7px;border-radius:50%;background:#dc2626;position:absolute;bottom:6px}
+.backup-calendar .day.selected{background:#dbeafe;border-color:#2563eb;color:#174b7a;font-weight:750}
+.backup-calendar .day.in-range{background:#eff6ff;border-color:#bfdbfe}
+.backup-calendar .day:disabled{opacity:.35;cursor:default}
+@media(max-width:480px){.backup-calendar{gap:3px}.backup-calendar .day{min-height:43px;border-radius:6px;font-size:13px}}
+</style>
 
 </body></html>
