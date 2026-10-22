@@ -10,7 +10,7 @@
 <body>
 <h1>阿寶每日寄信紀錄</h1>
 <section class="card no-print">
- <div class="row"><div class="field" style="max-width:220px"><label>統計日期</label><input type="date" id="date"></div><button class="btn secondary" id="newday">切換日期</button><button class="btn secondary" id="openMonthPage">月報查詢</button><button class="btn secondary" id="openBackupPage">備份還原</button><button class="btn secondary right hidden" id="backMonth">返回月報</button></div>
+ <div class="row"><div class="field" style="max-width:220px"><label>統計日期</label><input type="date" id="date"></div><button class="btn secondary" id="newday">切換日期</button><button class="btn secondary" id="openMonthPage">月報查詢</button><button class="btn secondary" id="openMailQueryPage">郵件查詢</button><button class="btn secondary" id="openBackupPage">備份還原</button><button class="btn secondary right hidden" id="backMonth">返回月報</button></div>
 </section>
 <section class="card no-print">
 <h2>新增寄信紀錄</h2>
@@ -48,6 +48,14 @@
 <button class="btn" id="monthSearch">查詢月報</button></div>
 <p class="muted">彙整所選月份的郵件件數與郵資；可查看各日紀錄或匯出月報。</p></div>
 <div id="monthReport"></div><div class="row no-print" style="margin-top:12px"><button class="btn secondary" id="printMonth">列印月報</button><button class="btn secondary" id="exportMonth">匯出月報 CSV</button></div></section>
+<section class="card hidden no-print" id="mailQueryCard">
+ <div class="row" style="align-items:center;justify-content:space-between"><h2 style="margin:0">郵件查詢</h2><button class="btn secondary" id="backMailQueryMain">← 返回每日紀錄</button></div>
+ <div class="row" style="margin-top:12px">
+  <div class="field" style="max-width:320px"><label for="mailQueryNumber">郵件號碼</label><input id="mailQueryNumber" inputmode="numeric" placeholder="輸入完整郵件號碼，例如 020111"></div>
+  <button class="btn" id="mailQuerySearch">搜尋</button>
+ </div>
+ <div id="mailQueryResults"></div>
+</section>
 <section class="card hidden no-print" id="backupCard">
  <div class="row" style="align-items:center;justify-content:space-between"><h2 style="margin:0">備份還原</h2><button class="btn secondary" id="backBackupMain">← 返回每日紀錄</button></div>
  <p class="muted">點選單日或日期區間即可還原，也可以完整還原備份。</p>
@@ -474,9 +482,26 @@ $('reportMonth').value=today().slice(0,7);
  $b('restoreAll').onclick=()=>{if(!backupData)return;if(!confirm('確定完整還原？本機郵件紀錄、收據拆分與郵資選項將被備份檔取代。'))return;const includeMemos=confirm('是否一併完整還原備忘錄？按「確定」會以備份檔的所有日期備忘錄取代目前內容；按「取消」則保留目前備忘錄。');if(!confirm('再次確認：完整還原會覆蓋所選資料，確定繼續？'))return;
   localStorage.setItem('mailEntries',JSON.stringify(backupData.mailEntries||[]));localStorage.setItem('mailSplits',JSON.stringify(backupData.mailSplits||{}));if(backupData.mailRates)localStorage.setItem('mailRates',JSON.stringify(backupData.mailRates));else localStorage.removeItem('mailRates');if(includeMemos){localStorage.setItem('mailMemos',JSON.stringify(backupData.mailMemos||{}));localStorage.removeItem('mailMemoHtml');}alert('已完整還原備份。');location.reload()};
  $b('clearLocal').onclick=()=>{if(!confirm('確定清除本機所有郵資統計資料？此操作無法復原。'))return;if(!confirm('再次確認：將刪除郵件紀錄、收據拆分、郵資選項與備忘錄。'))return;appKeys.forEach(k=>localStorage.removeItem(k));alert('本機紀錄已清除。');location.reload()};
- const mainSections=[...document.querySelectorAll('body > section')].filter(el=>!['historyCard','backupCard'].includes(el.id));
+ const mainSections=[...document.querySelectorAll('body > section')].filter(el=>!['historyCard','backupCard','mailQueryCard'].includes(el.id));
+ function showMailQuery(){mainSections.forEach(el=>el.classList.add('hidden'));$b('historyCard').classList.add('hidden');$b('backupCard').classList.add('hidden');$b('mailQueryCard').classList.remove('hidden');$b('mailQueryNumber').value='';$b('mailQueryResults').innerHTML='';window.scrollTo({top:0,behavior:'smooth'});$b('mailQueryNumber').focus();}
+ function searchMailNumber(){
+  const raw=$b('mailQueryNumber').value.trim(),box=$b('mailQueryResults');
+  if(!raw||!/^[0-9]+$/.test(raw)){box.innerHTML='<p class="month-report-empty">請輸入有效的郵件號碼（數字）。</p>';return;}
+  const target=Number(raw);
+  const matches=entries.filter(e=>e.start!==''&&e.end!==''&&Number(e.start)<=target&&target<=Number(e.end));
+  if(!matches.length){box.innerHTML='<p class="month-report-empty">找不到這個郵件號碼的紀錄。</p>';return;}
+  box.innerHTML='<div class="month-report-table-wrap"><table><thead><tr><th>郵件號碼</th><th>統計時間</th><th>類型</th><th>金額</th><th>請款</th></tr></thead><tbody>'+matches.map(e=>{
+   const claimed=!!e.receiptId;
+   return `<tr><td>${esc(raw)}</td><td>${esc(e.date||'—')}</td><td>${esc(e.type||'—')}</td><td>${fmt(Number(e.rate||0))}</td><td>${claimed?'是':'否'}</td></tr>`;
+  }).join('')+'</tbody></table></div>';
+ }
+ $b('openMailQueryPage').onclick=showMailQuery;
+ $b('backMailQueryMain').onclick=showMain;
+ $b('mailQuerySearch').onclick=searchMailNumber;
+ $b('mailQueryNumber').addEventListener('keydown',e=>{if(e.key==='Enter')searchMailNumber();});
+
  function showBackup(){mainSections.forEach(el=>el.classList.add('hidden'));$b('historyCard').classList.add('hidden');$b('backupCard').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
- function showMain(){mainSections.forEach(el=>el.classList.remove('hidden'));$b('historyCard').classList.add('hidden');$b('backupCard').classList.add('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+ function showMain(){mainSections.forEach(el=>el.classList.remove('hidden'));$b('historyCard').classList.add('hidden');$b('backupCard').classList.add('hidden');$b('mailQueryCard').classList.add('hidden');window.scrollTo({top:0,behavior:'smooth'})}
  $b('openBackupPage').onclick=showBackup;$b('backBackupMain').onclick=showMain;
  $b('openMonthPage').onclick=()=>{
   $b('backMonth').classList.add('hidden');
