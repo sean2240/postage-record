@@ -267,7 +267,13 @@ function showMainPage(){
  window.scrollTo({top:0,behavior:'smooth'});
 }
 $('backMonth').onclick=()=>{if(returnToMonth){showMonthPage()}else{$('backMonth').classList.add('hidden')}};
-$('printMonth').onclick=()=>window.print();
+$('printMonth').onclick=()=>{
+  // 月報列印時一律排除每日備忘錄，不受備忘錄自己的「列印」勾選影響。
+  document.body.classList.add('month-report-print');
+  const cleanup=()=>document.body.classList.remove('month-report-print');
+  window.addEventListener('afterprint',cleanup,{once:true});
+  window.print();
+};
 $('exportMonth').onclick=()=>{
  const month=$('reportMonth').value;if(!month){alert('請先選擇月報月份。');return}
  const es=monthEntries(month);if(!es.length){alert('所選月份沒有寄信紀錄，無法匯出。');return}
@@ -495,6 +501,12 @@ $('reportMonth').value=today().slice(0,7);
 .backup-calendar-legend .legend-dot{display:inline-block;width:7px;height:7px;border-radius:50%}
 .backup-calendar-legend .legend-dot.red{background:#dc2626}
 .backup-calendar-legend .legend-dot.green{background:#16a34a}
+</style>
+<style>
+@media print{
+  /* 列印月報時，備忘錄永遠不列印，即使每日備忘錄的列印勾選已開啟 */
+  body.month-report-print #memoCard{display:none!important}
+}
 </style>
 
 </body></html>
