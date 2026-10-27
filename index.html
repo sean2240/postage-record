@@ -20,7 +20,7 @@
  <div class="field"><label>郵件起號（沒有號碼留空）</label><input id="start" inputmode="numeric" placeholder="例如 020111"></div>
  <div class="field"><label>郵件迄號</label><input id="end" inputmode="numeric" placeholder="例如 020114"></div>
  <div class="field" style="max-width:150px"><label>無號碼件數</label><input id="nonum" type="number" min="0" step="1" value="0"></div>
- <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px"><label style="font-size:13px;color:#53657b;display:flex;align-items:center;gap:6px"><input type="checkbox" id="claimReceipt"> 請款</label><button class="btn" id="add">新增紀錄</button></div>
+ <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px"><label style="font-size:13px;color:#53657b;display:flex;align-items:center;gap:6px"><input type="checkbox" id="claimReceipt"> 請款</label><label style="font-size:13px;color:#53657b;display:flex;align-items:center;gap:6px"><input type="checkbox" id="mergeClaimReceipt"> 與前一筆合併請款</label><button class="btn" id="add">新增紀錄</button></div>
 </div>
 <p class="muted">單封信件可只填起號；沒有郵件號碼的信件，填無號碼件數；第一筆務必輸入完整六碼，之後可只輸入末三碼。</p>
 </section>
@@ -191,9 +191,49 @@ function renderReceipt(total){
     $('receiptReport').innerHTML='';
   }
 }
-window.delEntry=i=>{const removed=entries[i];entries.splice(i,1);if(removed?.receiptId){let a=splits[removed.date]||[];splits[removed.date]=a.filter(x=>!(typeof x==='object'&&x!==null&&x.entryId===removed.receiptId));}save();renderAll()};
+window.delEntry=i=>{
+ const removed=entries[i];
+ entries.splice(i,1);
+ if(removed?.receiptId){
+   const a=splits[removed.date]||[];
+   const splitIndex=a.findIndex(x=>typeof x==='object'&&x!==null&&(x.entryId===(removed.receiptGroupId||removed.receiptId)||x.entryId===removed.receiptId||(Array.isArray(x.entryIds)&&x.entryIds.includes(removed.receiptId))));
+   if(splitIndex>=0){
+     const split=a[splitIndex];
+     const ids=Array.isArray(split.entryIds)?split.entryIds.slice():[split.entryId||removed.receiptId];
+     const remaining=ids.filter(id=>id!==removed.receiptId);
+     if(remaining.length){
+       split.amount=Math.max(0,(Number(split.amount)||0)-amount(removed));
+       split.entryIds=remaining;
+       if(split.entryId===removed.receiptId)split.entryId=remaining[0];
+     }else a.splice(splitIndex,1);
+     splits[removed.date]=a;
+   }
+ }
+ save();renderAll()
+};
 window.changeSplit=(i,v)=>{let a=splits[$('date').value]||[];const old=a[i];a[i]=typeof old==='object'&&old!==null?{...old,amount:Number(v)||0}:Number(v)||0;splits[$('date').value]=a;save();renderStats()};
-window.removeSplit=i=>{let a=splits[$('date').value]||[];a.splice(i,1);splits[$('date').value]=a;save();renderStats()};
+window.removeSplit=i=>{
+ const date=$('date').value;
+ const a=splits[date]||[];
+ const split=a[i];
+ if(!split)return;
+ // 移除請款收據時，同步清除該收據所屬紀錄的請款狀態。
+ if(typeof split==='object'&&split!==null){
+   const ids=Array.isArray(split.entryIds)?split.entryIds.slice():[split.entryId].filter(Boolean);
+   const groupId=split.entryId;
+   entries.forEach(e=>{
+     if(e.date!==date)return;
+     if(ids.includes(e.receiptId)||(groupId&&e.receiptGroupId===groupId)){
+       delete e.receiptId;
+       delete e.receiptGroupId;
+     }
+   });
+ }
+ a.splice(i,1);
+ splits[date]=a;
+ save();
+ renderAll();
+};
 function renderAll(){ if(window.mailMemoStore)window.mailMemoStore.load(); $('printDate').textContent='統計日期：'+$('date').value; renderDuplicateAlert();renderRecords();renderStats()}
 function mailNumberPrefixCandidates(){
   const prefixes=new Set();
@@ -224,7 +264,12 @@ function resolveMailRange(rawStart,rawEnd){
   if(candidates.length>1&&candidates[0].score===candidates[1].score)return {error:'有多個可能的千號段，請輸入完整六碼郵件號碼。'};
   return {start:candidates[0].start,end:candidates[0].end};
 }
-$('type').addEventListener('change',refreshRate);$('add').onclick=()=>{let t=$('type').value,r=$('rate').value,s=$('start').value.trim(),e=$('end').value.trim(),n=Number($('nonum').value)||0;if(s&&!e)e=s;if((!s&&e)){alert('請填寫郵件起號，或將起號與迄號都留空並填無號碼件數。');return}if(s&&(!/^\d+$/.test(s)||!/^[0-9]+$/.test(e))){alert('請確認郵件號碼是數字。');return}if(s){const resolved=resolveMailRange(s,e);if(resolved.error){alert(resolved.error);return}s=resolved.start;e=resolved.end;if(Number(e)<Number(s)){alert('請確認郵件號碼迄號不小於起號。');return}}if(!s&&n<=0){alert('請填郵件號碼，或填入無號碼件數。');return}if(s&&n>0){alert('有郵件號碼時，無號碼件數請留 0。');return}
+$('type').addEventListener('change',refreshRate);
+$('claimReceipt').addEventListener('change',()=>{if($('claimReceipt').checked)$('mergeClaimReceipt').checked=false;});
+$('mergeClaimReceipt').addEventListener('change',()=>{if($('mergeClaimReceipt').checked)$('claimReceipt').checked=false;});
+$('add').onclick=()=>{let t=$('type').value,r=$('rate').value,s=$('start').value.trim(),e=$('end').value.trim(),n=Number($('nonum').value)||0;
+if($('claimReceipt').checked&&$('mergeClaimReceipt').checked){alert('「請款」與「與前一筆合併請款」不能同時勾選，已取消新增。');return}
+if($('mergeClaimReceipt').checked){const es=dayEntries();const prev=es[es.length-1];if(!prev||!prev.receiptId){alert('前一筆紀錄不是請款案件，無法合併請款。請先新增一筆「請款」紀錄，或取消合併選項。');return}}if(s&&!e)e=s;if((!s&&e)){alert('請填寫郵件起號，或將起號與迄號都留空並填無號碼件數。');return}if(s&&(!/^\d+$/.test(s)||!/^[0-9]+$/.test(e))){alert('請確認郵件號碼是數字。');return}if(s){const resolved=resolveMailRange(s,e);if(resolved.error){alert(resolved.error);return}s=resolved.start;e=resolved.end;if(Number(e)<Number(s)){alert('請確認郵件號碼迄號不小於起號。');return}}if(!s&&n<=0){alert('請填郵件號碼，或填入無號碼件數。');return}if(s&&n>0){alert('有郵件號碼時，無號碼件數請留 0。');return}
 let candidate={date:$('date').value,type:t,rate:Number(r),start:s,end:e,nonum:n};
 if(s){
   const conflicts=duplicateConflicts(candidate);
@@ -238,10 +283,23 @@ if(s){
   }
 }
 if($('claimReceipt').checked){
- candidate.receiptId='claim-'+Date.now()+'-'+Math.random().toString(36).slice(2,9);
- let a=splits[candidate.date]||[];a.push({amount:amount(candidate),entryId:candidate.receiptId});splits[candidate.date]=a;
+  candidate.receiptId='claim-'+Date.now()+'-'+Math.random().toString(36).slice(2,9);
+  candidate.receiptGroupId=candidate.receiptId;
+  let a=splits[candidate.date]||[];a.push({amount:amount(candidate),entryId:candidate.receiptGroupId,entryIds:[candidate.receiptId]});splits[candidate.date]=a;
+}else if($('mergeClaimReceipt').checked){
+  const es=dayEntries(),prev=es[es.length-1];
+  const groupId=prev.receiptGroupId||prev.receiptId;
+  const a=splits[candidate.date]||[];
+  const split=a.find(x=>typeof x==='object'&&x!==null&&(x.entryId===groupId||x.entryId===prev.receiptId||(Array.isArray(x.entryIds)&&x.entryIds.includes(prev.receiptId))));
+  if(!split){alert('找不到前一筆請款收據，已取消新增。');return}
+  candidate.receiptId='claim-'+Date.now()+'-'+Math.random().toString(36).slice(2,9);
+  candidate.receiptGroupId=groupId;
+  split.amount=(Number(split.amount)||0)+amount(candidate);
+  if(!Array.isArray(split.entryIds))split.entryIds=[split.entryId||prev.receiptId];
+  split.entryIds.push(candidate.receiptId);
+  splits[candidate.date]=a;
 }
-entries.push(candidate);save();$('start').value='';$('end').value='';$('nonum').value=0;$('claimReceipt').checked=false;renderAll()};
+entries.push(candidate);save();$('start').value='';$('end').value='';$('nonum').value=0;$('claimReceipt').checked=false;$('mergeClaimReceipt').checked=false;renderAll()};
 $('date').onchange=renderAll;$('newday').onclick=()=>{let d=prompt('輸入要查看的日期（YYYY-MM-DD）',today());if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d)){$('date').value=d;renderAll()}};
 $('saverates').onclick=()=>{let lines=$('rateset').value.split(/\n/).map(x=>x.trim()).filter(Boolean),next=[];for(let line of lines){let p=line.split(',');if(p.length<2||!p[0].trim()||!Number.isFinite(Number(p[1]))){alert('格式錯誤：每行請輸入「類型,郵資」，例如 普掛,28');return}next.push([p[0].trim(),Number(p[1])])}if(!next.length){alert('至少需要一個郵資選項');return}rates=next;save();refreshType();renderAll();alert('郵資選項已儲存。')};
 $('clearDay').onclick=()=>{if(!confirm('確定清空 '+$('date').value+' 的所有寄信紀錄與收據拆分？'))return;entries=entries.filter(e=>e.date!==$('date').value);delete splits[$('date').value];save();renderAll()};
