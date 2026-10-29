@@ -537,9 +537,20 @@ $('reportMonth').value=today().slice(0,7);
   }
   alert('已還原所選日期區間。');location.reload();
  };
- $b('restoreAll').onclick=()=>{if(!backupData)return;if(!confirm('確定完整還原？本機郵件紀錄、收據拆分與郵資選項將被備份檔取代。'))return;const includeMemos=confirm('是否一併完整還原備忘錄？按「確定」會以備份檔的所有日期備忘錄取代目前內容；按「取消」則保留目前備忘錄。');if(!confirm('再次確認：完整還原會覆蓋所選資料，確定繼續？'))return;
-  localStorage.setItem('mailEntries',JSON.stringify(backupData.mailEntries||[]));localStorage.setItem('mailSplits',JSON.stringify(backupData.mailSplits||{}));if(backupData.mailRates)localStorage.setItem('mailRates',JSON.stringify(backupData.mailRates));else localStorage.removeItem('mailRates');if(includeMemos){localStorage.setItem('mailMemos',JSON.stringify(backupData.mailMemos||{}));localStorage.removeItem('mailMemoHtml');}alert('已完整還原備份。');location.reload()};
- $b('clearLocal').onclick=()=>{if(!confirm('確定清除本機所有郵資統計資料？此操作無法復原。'))return;if(!confirm('再次確認：將刪除郵件紀錄、收據拆分、郵資選項與備忘錄。'))return;appKeys.forEach(k=>localStorage.removeItem(k));alert('本機紀錄已清除。');location.reload()};
+ $b('restoreAll').onclick=()=>{if(!backupData)return;if(!confirm('確定完整還原？郵件紀錄與收據拆分將由備份檔取代；郵資選項則會合併備份、本機設定及目前原始碼的預設選項。'))return;const includeMemos=confirm('是否一併完整還原備忘錄？按「確定」會以備份檔的所有日期備忘錄取代目前內容；按「取消」則保留目前備忘錄。');if(!confirm('再次確認：完整還原會覆蓋所選資料，確定繼續？'))return;
+  localStorage.setItem('mailEntries',JSON.stringify(backupData.mailEntries||[]));localStorage.setItem('mailSplits',JSON.stringify(backupData.mailSplits||{}));
+  // 郵資選項採合併策略：保留目前原始碼 DEFAULT_RATES、備份中的選項及本機既有自訂選項，依「類型＋金額」去重。
+  const backupRates=Array.isArray(backupData.mailRates)?backupData.mailRates:[];
+  const currentRates=JSON.parse(localStorage.getItem('mailRates')||'null')||[];
+  const mergedRates=[];
+  [...DEFAULT_RATES,...backupRates,...currentRates].forEach(item=>{
+    if(Array.isArray(item)&&item.length>=2&&item[0]!==undefined&&String(item[0]).trim()!==''&&Number.isFinite(Number(item[1]))&&!mergedRates.some(x=>String(x[0])===String(item[0])&&Number(x[1])===Number(item[1]))){
+      mergedRates.push([String(item[0]),Number(item[1])]);
+    }
+  });
+  localStorage.setItem('mailRates',JSON.stringify(mergedRates));
+  if(includeMemos){localStorage.setItem('mailMemos',JSON.stringify(backupData.mailMemos||{}));localStorage.removeItem('mailMemoHtml');}alert('已完整還原備份。');location.reload()};
+  $b('clearLocal').onclick=()=>{if(!confirm('確定清除本機所有郵資統計資料？此操作無法復原。'))return;if(!confirm('再次確認：將刪除郵件紀錄、收據拆分、郵資選項與備忘錄。'))return;appKeys.forEach(k=>localStorage.removeItem(k));alert('本機紀錄已清除。');location.reload()};
  const mainSections=[...document.querySelectorAll('body > section')].filter(el=>!['historyCard','backupCard','mailQueryCard'].includes(el.id));
  function showMailQuery(){mainSections.forEach(el=>el.classList.add('hidden'));$b('historyCard').classList.add('hidden');$b('backupCard').classList.add('hidden');$b('mailQueryCard').classList.remove('hidden');$b('mailQueryNumber').value='';$b('mailQueryResults').innerHTML='';window.scrollTo({top:0,behavior:'smooth'});$b('mailQueryNumber').focus();}
  function searchMailNumber(){
