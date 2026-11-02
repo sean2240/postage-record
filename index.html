@@ -470,7 +470,7 @@ $('reportMonth').value=today().slice(0,7);
     Object.keys(local.mailSplits||{}).forEach(d=>{if((local.mailSplits[d]||[]).length){backupDates.add(d);mailBackupDates.add(d)}});
     Object.entries(local.mailMemos||{}).forEach(([d,v])=>{if(typeof v==='string'&&v.trim()){backupDates.add(d);if(!mailBackupDates.has(d))memoOnlyDates.add(d)}});
     rangeStart=null;rangeEnd=null;rangeAnchor=null;
-    const dates=[...backupDates].sort();calendarMonth=dates.length?monthKey(parseDate(dates[0])):monthKey(new Date());
+    calendarMonth=monthKey(new Date());
     $b('backupFileName').textContent='選取本機資料的備份日期區間';
     $b('restoreAll').disabled=true;
     renderCalendar();
